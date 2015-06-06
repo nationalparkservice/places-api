@@ -11,7 +11,8 @@ module.exports = function(config) {
             requestedUrl = req.protocol + '://' + req.get('Host') + req.originalUrl,
             compareSig = tools.osmOauth._getSignature(req.method, requestedUrl, tools.verification.baseString(auths), tokens.access_token_secret),
             josmCompareSig = tools.josmOauth._getSignature(req.method, requestedUrl, tools.verification.baseString(auths), tokens.access_token_secret);
-          if (encodeURIComponent(compareSig) === origSig || encodeURIComponent(josmCompareSig) === origSig) {
+            arcCompareSig = tools.arcOauth._getSignature(req.method, requestedUrl, tools.verification.baseString(auths), tokens.access_token_secret);
+          if (encodeURIComponent(compareSig) === origSig || encodeURIComponent(josmCompareSig) === origSig || encodeURIComponent(arcCompareSig) === origSig) {
             callback({
               'valid': !e,
               'userId': userId,
