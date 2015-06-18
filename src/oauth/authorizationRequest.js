@@ -10,7 +10,7 @@ module.exports = function(config) {
           var origSig = auths.oauth_signature,
             requestedUrl = req.protocol + '://' + req.get('Host') + req.originalUrl,
             compareSig = tools.osmOauth._getSignature(req.method, requestedUrl, tools.verification.baseString(auths), tokens.access_token_secret),
-            josmCompareSig = tools.josmOauth._getSignature(req.method, requestedUrl, tools.verification.baseString(auths), tokens.access_token_secret);
+            josmCompareSig = tools.josmOauth._getSignature(req.method, requestedUrl, tools.verification.baseString(auths), tokens.access_token_secret),
             arcCompareSig = tools.arcOauth._getSignature(req.method, requestedUrl, tools.verification.baseString(auths), tokens.access_token_secret);
           if (encodeURIComponent(compareSig) === origSig || encodeURIComponent(josmCompareSig) === origSig || encodeURIComponent(arcCompareSig) === origSig) {
             callback({
