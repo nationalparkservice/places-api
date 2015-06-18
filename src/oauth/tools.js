@@ -57,6 +57,15 @@ module.exports = function(config) {
         null,
         'HMAC-SHA1'
       ),
+      arcOauth: new oauth.OAuth(
+          'http://localhost/oauth/request_token', //not used
+          'http://localhost/oauth/access_token', //not used
+          oauthSettings.arc2places.consumerKey,
+          oauthSettings.arc2places.consumerSecret,
+          '1.0',
+          null,
+          'HMAC-SHA1'
+      ),
       addRequestToken: function(token, tokenSecret, callback) {
         var query = 'SELECT new_session(\'{{token}}\', \'{{tokenSecret}}\')';
         query = database().addParams(query, 'addToken', {

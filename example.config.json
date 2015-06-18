@@ -42,6 +42,10 @@
   "oauth": {
     "consumerKey": "CONSUMER KEY",
     "consumerSecret": "CONSUMER SECRET",
+    "arc2places": {
+      "consumerKey": "CONSUMER KEY",
+      "consumerSecret": "CONSUMER SECRET"
+    },
     "external": false,
     "local": {
       "auth": "/account/logon/",
