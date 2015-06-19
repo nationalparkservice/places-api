@@ -292,6 +292,7 @@ IF v_tag_count > 0 THEN
         WHEN "geometry" && v_geometry_type THEN "name"
         ELSE null
       END as "name",
+      "pathname",
       max("hstore_len") AS "hstore_len",
       count(*) AS "match_count",
       max("matchscore") as "matchscore",
@@ -300,6 +301,7 @@ IF v_tag_count > 0 THEN
     FROM (
       SELECT
         "name",
+        "pathname",
         "available_tags",
         "all_tags",
         "searchable",
@@ -310,6 +312,7 @@ IF v_tag_count > 0 THEN
       FROM (
         SELECT
           "name",
+          "pathname",
           each("tags") AS "available_tags",
           "tags" as "all_tags",
           "searchable",
@@ -319,6 +322,7 @@ IF v_tag_count > 0 THEN
         FROM (
           SELECT
             "hstore_tag_list"."name",
+            "hstore_tag_list"."pathname",
             "searchable",
             "matchscore",
             "geometry",
@@ -328,6 +332,7 @@ IF v_tag_count > 0 THEN
             (
               SELECT
                 "name",
+                "pathname",
                 json_to_hstore("tags") AS "tags",
                 COALESCE("searchable",false) as "searchable",
                 "matchscore",
@@ -350,6 +355,7 @@ IF v_tag_count > 0 THEN
     GROUP BY
       "all_tags",
       "name",
+      "pathname",
       "geometry"
     ) "counted_tags"
   WHERE
