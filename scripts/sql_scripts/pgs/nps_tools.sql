@@ -329,7 +329,7 @@ IF v_tag_count > 0 THEN
               SELECT
                 "name",
                 json_to_hstore("tags") AS "tags",
-                "searchable",
+                COALESCE("searchable",false) as "searchable",
                 "matchscore",
                 "geometry"
               FROM
@@ -338,7 +338,6 @@ IF v_tag_count > 0 THEN
                 ((ARRAY['point'] && v_geometry_type AND "tag_list"."geometry" && ARRAY['point']) OR
                 (ARRAY['line','area'] && v_geometry_type AND "tag_list"."geometry" && ARRAY['line','area'])) AND
                 (v_all OR (
-                  "tag_list"."searchable" is null OR
                   "tag_list"."searchable" is true
                 ))
             ) "hstore_tag_list"
