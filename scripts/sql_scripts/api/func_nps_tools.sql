@@ -453,7 +453,7 @@ CREATE OR REPLACE VIEW pgs_current_relations AS
                     upper(relation_members.member_type::char(1)) AS member_type,
                     relation_members.member_role as member_role,
                     relation_members.sequence_id AS sequence_id
-                   FROM relation_members
+                   FROM current_relation_members
                   WHERE relation_members.relation_id = current_relations.id) members) AS member,
     ( SELECT json_agg(tags.*) AS json_agg
            FROM ( SELECT current_relation_tags.k,
