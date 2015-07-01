@@ -139,7 +139,12 @@ SELECT
   "nps_render_point"."osm_id" AS "cartodb_id",
   "nps_render_point"."version" AS "version",
   "nps_render_point"."tags" -> 'name'::text AS "name",
-  "nps_render_point"."tags" -> 'nps:places_id'::text AS "places_id",
+  CASE
+    WHEN "nps_render_point"."osm_id" < 0 THEN
+      'r' || ("nps_render_point"."osm_id" * -1)
+    ELSE
+      'n' || "nps_render_point"."osm_id"
+  END AS "places_id",
   lower("nps_render_point"."unit_code") AS "unit_code",
   "nps_render_point"."nps_type" AS "type",
   "nps_render_point"."tags"::json::text AS "tags",
@@ -164,7 +169,8 @@ CREATE OR REPLACE VIEW "nps_tilemill_point_view" AS
    FROM
      "nps_render_point"
      LEFT JOIN "render_park_polys" ON lower("nps_render_point"."unit_code") = lower("render_park_polys"."unit_code"::text)
-   WHERE "nps_render_point"."type" IS NOT NULL;-----------------------------------------------------------------------
+   WHERE "nps_render_point"."type" IS NOT NULL;
+-----------------------------------------------------------------------
 
 -----------------------------------------------------------------------
 CREATE OR REPLACE VIEW public.nps_cartodb_polygon_view AS
@@ -172,11 +178,17 @@ SELECT
   "nps_render_polygon"."osm_id" AS "cartodb_id",
   "nps_render_polygon"."version" AS "version",
   "nps_render_polygon"."tags" -> 'name'::text AS "name",
-  "nps_render_polygon"."tags" -> 'nps:places_id'::text AS "places_id",
+  CASE
+    WHEN "nps_render_polygon"."osm_id" < 0 THEN
+      'r' || ("nps_render_polygon"."osm_id" * -1)
+    ELSE
+      'w' || "nps_render_polygon"."osm_id"
+  END AS "places_id",
   "nps_render_polygon"."unit_code" AS "unit_code",
   "nps_render_polygon"."nps_type" AS "type",
   "nps_render_polygon"."tags"::json::text AS tags,
-  "nps_render_polygon"."the_geom" AS the_geom
+  "nps_render_polygon"."the_geom" AS the_geom,
+  "nps_render_polygon"."rendered" AS "last_modified"
 FROM "nps_render_polygon";;
 COMMENT ON VIEW public.nps_cartodb_polygon_view
   IS 'This view is designed to transform our internal nps_render_polygon table into the table we maintain in cartodb.';
@@ -189,11 +201,17 @@ SELECT
   "nps_render_line"."osm_id" AS "cartodb_id",
   "nps_render_line"."version" AS "version",
   "nps_render_line"."tags" -> 'name'::text AS "name",
-  "nps_render_line"."tags" -> 'nps:places_id'::text AS "places_id",
+  CASE
+    WHEN "nps_render_line"."osm_id" < 0 THEN
+      'r' || ("nps_render_line"."osm_id" * -1)
+    ELSE
+      'w' || "nps_render_line"."osm_id"
+  END AS "places_id",
   "nps_render_line"."unit_code" AS "unit_code",
   "nps_render_line"."nps_type" AS "type",
   "nps_render_line"."tags"::json::text AS tags,
-  "nps_render_line"."the_geom" AS the_geom
+  "nps_render_line"."the_geom" AS the_geom,
+  "nps_render_line"."rendered" AS "last_modified"
 FROM "nps_render_line";;
 COMMENT ON VIEW public.nps_cartodb_line_view
   IS 'This view is designed to transform our internal nps_render_line table into the table we maintain in cartodb.';
