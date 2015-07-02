@@ -797,6 +797,9 @@ $BODY$
 
 --------------------------------
 -- Render a full changeset
+CREATE OR REPLACE FUNCTION public.o2p_render_changeset(bigint)
+  RETURNS boolean[] AS
+$BODY$
   DECLARE
     v_changeset_id ALIAS FOR $1;
     v_return_value boolean[];
