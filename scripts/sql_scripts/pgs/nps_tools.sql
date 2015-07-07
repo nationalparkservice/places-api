@@ -129,7 +129,9 @@ CREATE TABLE nps_render_log
 (
   render_id bigint,
   task_name character varying(255),
-  run_time timestamp without time zone
+  run_time timestamp without time zone,
+  end_time timestamp without time zone,
+  status character varying(255)
 );
 -----------------------------------------------------------------------
 
