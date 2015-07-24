@@ -866,4 +866,5 @@ CREATE FOREIGN TABLE api_ways (id bigint, visible boolean, version bigint, chang
 CREATE FOREIGN TABLE api_relations (id bigint, visible boolean, version bigint, changeset bigint, "timestamp" timestamp without time zone, "user" text, "uid" bigint, member JSON, tag JSON) SERVER places_api OPTIONS (table_name 'pgs_current_relations');
 --DROP FOREIGN TABLE api_users;
 CREATE FOREIGN TABLE api_users (email character varying (255), id bigint, display_name character varying (255)) SERVER places_api OPTIONS (table_name 'users');
-
+--DROP FOREIGN TABLE api_changeset_tags;
+CREATE FOREIGN TABLE api_changeset_tags (changeset_id bigint, k text, v text) SERVER places_api OPTIONS (table_name 'changeset_tags');
