@@ -9,7 +9,7 @@ echo -e "\033[0m"
 echo ""
 
 # Prompt the user for these
-this_dir=`pwd`
+this_dir=$(pwd)
 website_dir=$this_dir/poi-website
 
 mkdir -p $website_dir/node_modules
@@ -76,7 +76,7 @@ fi
 echo    "╔════════════════════════════════════════════════════════════════════════════╗"
 echo    "  Installing the required modules"
 cd $website_dir
-node -e "console.log(JSON.stringify(`cat package.json`.dependencies, null, 2));"
+node -e "console.log(JSON.stringify($(cat package.json).dependencies, null, 2));"
 npm install
 cd $this_dir
 
@@ -112,7 +112,7 @@ then
   cd $this_dir
 fi
 
-sudo chown -R `whoami`:`whoami` $website_dir
+sudo chown -R $(whoami):$(whoami) $website_dir
 cd $this_dir
 
 echo -e "\033[34m"
@@ -124,5 +124,5 @@ echo "║    node $website_dir/app.js"
 echo "╚═════════════════════════════════════════════════════════════════╝"
 echo -e "\033[0m"
 echo ""
-sudo chown -R `whoami`:`whoami` $website_dir
+sudo chown -R $(whoami):$(whoami) $website_dir
 exit
