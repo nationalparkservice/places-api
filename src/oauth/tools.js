@@ -39,7 +39,7 @@ module.exports = function (config) {
           });
         };
       },
-      _getSignatures: oauthSettings.keys.map(function (setting) {
+      oauth: oauthSettings.keys.map(function (setting) {
         return new oauth.OAuth(
           'http://' + oauthSettings.server +'/oauth/request_token',
           'http://' + oauthSettings.server + '/oauth/access_token',
