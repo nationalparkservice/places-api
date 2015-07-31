@@ -9,8 +9,8 @@ module.exports = function (config) {
           // Verify the signature
           var origSig = auths.oauth_signature;
           var requestedUrl = req.protocol + '://' + req.get('Host') + req.originalUrl;
-          var compareSigs = tools.osmOauth._getSignatures.map(function (getSignature) {
-            return encodeURIComponent(getSignature(req.method, requestedUrl, tools.verification.baseString(auths), tokens.access_token_secret));
+          var compareSigs = tools.oauth.map(function (auth) {
+            return encodeURIComponent(auth._getSignature(req.method, requestedUrl, tools.verification.baseString(auths), tokens.access_token_secret));
           });
           if (compareSigs.indexOf(origSig) > -1) {
             callback({
