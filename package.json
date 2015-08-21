@@ -21,13 +21,13 @@
   },
   "dependencies": {
     "bluebird": "2.9.34",
-    "body-parser": "1.13.2",
+    "body-parser": "1.13.3",
     "connect-timeout": "1.6.2",
-    "express": "4.13.1",
-    "method-override": "2.3.4",
+    "express": "4.13.3",
+    "method-override": "2.3.5",
     "oauth": "0.9.13",
     "osmtogeojson": "2.2.5",
-    "pg": "4.4.0",
+    "pg": "4.4.1",
     "winston": "1.0.1",
     "xmljs_trans_js": "git+https://github.com/nationalparkservice/xmljs_trans_js.git#master"
   }
