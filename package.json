@@ -22,7 +22,7 @@
   "dependencies": {
     "bluebird": "2.9.34",
     "body-parser": "1.13.3",
-    "connect-timeout": "1.6.2",
+    "connect-timeout": "1.7.0",
     "express": "4.13.3",
     "method-override": "2.3.5",
     "oauth": "0.9.13",
