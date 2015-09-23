@@ -868,3 +868,5 @@ CREATE FOREIGN TABLE api_relations (id bigint, visible boolean, version bigint, 
 CREATE FOREIGN TABLE api_users (email character varying (255), id bigint, display_name character varying (255)) SERVER places_api OPTIONS (table_name 'users');
 --DROP FOREIGN TABLE api_changeset_tags;
 CREATE FOREIGN TABLE api_changeset_tags (changeset_id bigint, k text, v text) SERVER places_api OPTIONS (table_name 'changeset_tags');
+--DROP FOREIGN TABLE api_element_info;
+CREATE FOREIGN TABLE api_element_info (id bigint, geometry text, max_version bigint, created_time text, updated_time text, created_changeset text, updated_changeset text, created_by character varying(255), updated_by character varying(255), created_tags json, updated_tags json) SERVER places_api OPTIONS (table_name 'api_element_info');
