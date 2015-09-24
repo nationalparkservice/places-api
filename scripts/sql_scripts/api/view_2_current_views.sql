@@ -291,6 +291,4 @@ FROM
     FROM
       "relations"
     GROUP BY "relation_id"
-  ) "agg_elements"
-WHERE
-    "agg_elements"."min_version" != "agg_elements"."max_version") "calculated_elements";
+  ) "agg_elements") "calculated_elements";
