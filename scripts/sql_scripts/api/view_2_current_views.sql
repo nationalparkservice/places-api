@@ -221,11 +221,7 @@ SELECT
   "calculated_elements"."created_time",
   "calculated_elements"."updated_time",
   "calculated_elements"."created_changeset",
-  "calculated_elements"."updated_changeset",
-  "created_users"."display_name" as "created_by",
-  "updated_users"."display_name" as "updated_by",
-  "created_changeset_tags"."tags" as "created_tags",
-  "updated_changeset_tags"."tags" as "updated_tags"
+  "calculated_elements"."updated_changeset"
 FROM (
 SELECT
   "agg_elements"."id",
@@ -297,10 +293,4 @@ FROM
     GROUP BY "relation_id"
   ) "agg_elements"
 WHERE
-    "agg_elements"."min_version" != "agg_elements"."max_version") "calculated_elements"
-      LEFT OUTER JOIN "changesets" AS "created_changesets" on "calculated_elements"."created_changeset"::int = "created_changesets"."id"
-        LEFT OUTER JOIN (SELECT changeset_id, json_agg((SELECT row_to_json("_") FROM (SELECT "k", "v") AS "_")) AS "tags" from changeset_tags group by changeset_id) as "created_changeset_tags" ON "calculated_elements"."created_changeset"::int = "created_changeset_tags"."changeset_id"
-        LEFT OUTER JOIN "users" AS "created_users" ON "created_users"."id" = "created_changesets"."user_id"
-      LEFT OUTER JOIN "changesets" AS "updated_changesets" ON "calculated_elements"."updated_changeset"::int = "updated_changesets"."id"
-        LEFT OUTER JOIN (SELECT changeset_id, json_agg((SELECT row_to_json("_") FROM (SELECT "k", "v") AS "_")) AS "tags" from changeset_tags group by changeset_id) as "updated_changeset_tags" ON "calculated_elements"."updated_changeset"::int = "updated_changeset_tags"."changeset_id"
-        LEFT OUTER JOIN "users" AS "updated_users" ON "updated_users"."id" = "updated_changesets"."user_id";
+    "agg_elements"."min_version" != "agg_elements"."max_version") "calculated_elements";
