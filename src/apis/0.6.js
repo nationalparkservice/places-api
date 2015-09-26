@@ -1,12 +1,12 @@
 /* jshint camelcase: false */
 
-var queries = require('./sql/apiSql'),
-  apiFunctions = require('./apiFunctions'),
-  tileMath = require('../tileMath');
+var queries = require('./sql/apiSql');
+var apiFunctions = require('./apiFunctions');
+var tileMath = require('../tileMath');
 
 // These are all the calls we need to handle
 // http://wiki.openstreetmap.org/wiki/API_v0.6_(Archive)#Status
-module.exports = function(config) {
+module.exports = function (config) {
   var database = require('../database')('api', config);
   return [{
     'name': 'GET capabilities',
@@ -15,7 +15,7 @@ module.exports = function(config) {
     'method': 'GET',
     'path': 'capabilities',
     'auth': apiFunctions.auth(config),
-    'process': function(req, res) {
+    'process': function (req, res) {
       res.send({
         'api': config.capabilities
       });
@@ -25,7 +25,7 @@ module.exports = function(config) {
     'description': 'Returns the XML for that node.',
     'method': 'GET',
     'path': 'node/:id(\\d+)',
-    'process': function(req, res) {
+    'process': function (req, res) {
       // Lookup the node in the database
       var query = queries.select.current.nodes.concat('WHERE', queries.where.current.node.id).join('\n');
       database(req, res).query(query, 'node', apiFunctions.respond);
@@ -35,7 +35,7 @@ module.exports = function(config) {
     'description': 'Updates the node, returns new version number.',
     'method': 'PUT',
     'path': 'node/:id(\\d+)',
-    'process': function(req, res) {
+    'process': function (req, res) {
       res.status({
         'statusCode': 501
       });
@@ -45,7 +45,7 @@ module.exports = function(config) {
     'description': 'Deletes the node, returns new version number(?).',
     'method': 'DELETE',
     'path': 'node/:id(\\d+)',
-    'process': function(req, res) {
+    'process': function (req, res) {
       res.status({
         'statusCode': 501
       });
@@ -55,7 +55,7 @@ module.exports = function(config) {
     'description': 'Creates the node, returns new node number (new nodes always version=1?).',
     'method': 'PUT',
     'path': 'node/create',
-    'process': function(req, res) {
+    'process': function (req, res) {
       res.status({
         'statusCode': 501
       });
@@ -65,7 +65,7 @@ module.exports = function(config) {
     'description': 'Returns all versions of the node.',
     'method': 'GET',
     'path': 'node/:id(\\d+)/history',
-    'process': function(req, res) {
+    'process': function (req, res) {
       var query = queries.select.all.nodes.concat('WHERE', queries.where.all.node.id).join('\n');
       database(req, res).query(query, 'node', apiFunctions.respond);
     }
@@ -74,7 +74,7 @@ module.exports = function(config) {
     'description': 'Returns the XML for all ways that this node is part of.',
     'method': 'GET',
     'path': 'node/:id(\\d+)/ways',
-    'process': function(req, res) {
+    'process': function (req, res) {
       var query = queries.select.current.ways.concat(
         'JOIN (',
         queries.select.current.waysWithNode,
@@ -87,7 +87,7 @@ module.exports = function(config) {
     'description': 'Returns the XML for all relations that this node is part of.',
     'method': 'GET',
     'path': 'node/:id(\\d+)/relations',
-    'process': function(req, res) {
+    'process': function (req, res) {
       var query = queries.select.current.relations.concat(
         'JOIN (',
         queries.select.current.relationsWithNode,
@@ -100,7 +100,7 @@ module.exports = function(config) {
     'description': 'Returns the XML for that version of the node.',
     'method': 'GET',
     'path': 'node/:id(\\d+)/:version(\\d+)',
-    'process': function(req, res) {
+    'process': function (req, res) {
       if (!isNaN(req.params.version)) {
         var query = queries.select.all.nodes.concat('WHERE', queries.where.all.node.id, 'AND', queries.where.all.node.version).join('\n');
         database(req, res).query(query, 'node', apiFunctions.respond);
@@ -118,7 +118,7 @@ module.exports = function(config) {
     'description': 'Returns the XML for all given node numbers.',
     'method': 'GET',
     'path': 'nodes',
-    'process': function(req, res) {
+    'process': function (req, res) {
       apiFunctions.queryMultipleElements(req, res, 'node', database);
     }
   }, {
@@ -126,7 +126,7 @@ module.exports = function(config) {
     'description': 'Returns the XML for that way.',
     'method': 'GET',
     'path': 'way/:id(\\d+)',
-    'process': function(req, res) {
+    'process': function (req, res) {
       var query = queries.select.current.ways.concat('WHERE', queries.where.current.way.id).join('\n');
       database(req, res).query(query, 'way', apiFunctions.respond);
     }
@@ -135,7 +135,7 @@ module.exports = function(config) {
     'description': 'Updates the way, returns new version number.',
     'method': 'PUT',
     'path': 'way/:id(\\d+)',
-    'process': function(req, res) {
+    'process': function (req, res) {
       res.status({
         'statusCode': 501
       });
@@ -145,7 +145,7 @@ module.exports = function(config) {
     'description': 'Deletes the node, returns new version number(?).',
     'method': 'DELETE',
     'path': 'way/:id(\\d+)',
-    'process': function(req, res) {
+    'process': function (req, res) {
       res.status({
         'statusCode': 501
       });
@@ -155,7 +155,7 @@ module.exports = function(config) {
     'description': 'Creates the way, returns new way number (new ways always version=1?).',
     'method': 'PUT',
     'path': 'way/create',
-    'process': function(req, res) {
+    'process': function (req, res) {
       res.status({
         'statusCode': 501
       });
@@ -165,7 +165,7 @@ module.exports = function(config) {
     'description': 'Returns all versions of the way.',
     'method': 'GET',
     'path': 'way/:id(\\d+)/history',
-    'process': function(req, res) {
+    'process': function (req, res) {
       var query = queries.select.all.ways.concat('WHERE', queries.where.all.way.id).join('\n');
       database(req, res).query(query, 'way', apiFunctions.respond);
     }
@@ -174,7 +174,7 @@ module.exports = function(config) {
     'description': 'Returns the XML of all relations that this way is part of.',
     'method': 'GET',
     'path': 'way/:id(\\d+)/relations',
-    'process': function(req, res) {
+    'process': function (req, res) {
       var query = queries.select.current.relations.concat(
         'JOIN (',
         queries.select.current.relationsWithWay,
@@ -187,7 +187,7 @@ module.exports = function(config) {
     'description': 'Returns XML of a way and all its nodes.',
     'method': 'GET',
     'path': 'way/:id(\\d+)/full',
-    'process': function(req, res) {
+    'process': function (req, res) {
       var queryList = [{
         'type': 'way',
         'query': queries.select.current.ways.concat('WHERE', queries.where.current.way.id).join('\n')
@@ -196,8 +196,36 @@ module.exports = function(config) {
         'query': queries.select.current.nodes.concat(
           'JOIN (',
           queries.select.current.nodesInWay,
-          'WHERE current_way_nodes.way_id = \'{{id}}\'',
+          "WHERE current_way_nodes.way_id = '{{id}}'",
           ') nodes_in_way ON nodes_in_way.node_id = api_current_nodes.id'
+        ).join('\n')
+      }];
+
+      database(req, res).query(queryList, null, apiFunctions.respond);
+    }
+  }, {
+    'name': 'GET way/#id/uninteresting',
+    'description': 'Returns XML of a way and all the uninteresting nodes that it includes.',
+    'method': 'GET',
+    'path': 'way/:id(\\d+)/uninteresting',
+    'process': function (req, res) {
+      req.params.uninterestingTags = config.iD.settings.tags.disabledFields.concat(config.iD.settings.tags.uninterestingFields);
+      var queryList = [{
+        'type': 'way',
+        'query': queries.select.current.ways.concat('WHERE', queries.where.current.way.id).join('\n')
+      }, {
+        'type': 'node',
+        'query': queries.select.current.nodes.concat(
+          'JOIN (',
+          'SELECT node_id FROM (',
+          '  SELECT DISTINCT node_id,',
+          '  (SELECT COUNT(*) FROM current_node_tags WHERE current_way_nodes.node_id = current_node_tags.node_id AND k NOT IN ',
+          "    (SELECT json_array_elements_text(('{{uninterestingTags}}')::json)::text)",
+          '  ) AS tags,',
+          "  (SELECT COUNT(DISTINCT way_id) FROM current_way_nodes current_way_nodes2 WHERE current_way_nodes.node_id = current_way_nodes2.node_id AND way_id != '{{id}}') AS others",
+          "FROM current_way_nodes WHERE current_way_nodes.way_id = '{{id}}') x",
+          'WHERE tags = 0 AND others = 0',
+          ') interesting_nodes_in_way ON interesting_nodes_in_way.node_id = api_current_nodes.id'
         ).join('\n')
       }];
 
@@ -208,7 +236,7 @@ module.exports = function(config) {
     'description': 'Returns the XML for that version of the way.',
     'method': 'GET',
     'path': 'way/:id(\\d+)/:version(\\d+)',
-    'process': function(req, res) {
+    'process': function (req, res) {
       if (!isNaN(req.params.version)) {
         var query = queries.select.all.ways.concat('WHERE', queries.where.all.way.id, 'AND', queries.where.all.way.version).join('\n');
         database(req, res).query(query, 'way', apiFunctions.respond);
@@ -225,7 +253,7 @@ module.exports = function(config) {
     'description': 'Returns XML of all numbered ways.',
     'method': 'GET',
     'path': 'ways',
-    'process': function(req, res) {
+    'process': function (req, res) {
       apiFunctions.queryMultipleElements(req, res, 'way', database);
     }
   }, {
@@ -233,7 +261,7 @@ module.exports = function(config) {
     'description': 'Returns the XML for that relation.',
     'method': 'GET',
     'path': 'relation/:id(\\d+)',
-    'process': function(req, res) {
+    'process': function (req, res) {
       var query = queries.select.current.relations.concat('WHERE', queries.where.current.relation.id).join('\n');
       database(req, res).query(query, 'relation', apiFunctions.respond);
     }
@@ -242,7 +270,7 @@ module.exports = function(config) {
     'description': 'Updates the relation, returns new version number.',
     'method': 'PUT',
     'path': 'relation/:id(\\d+)',
-    'process': function(req, res) {
+    'process': function (req, res) {
       res.status({
         'statusCode': 501
       });
@@ -252,7 +280,7 @@ module.exports = function(config) {
     'description': 'Deletes the relation, returns new version number(?).',
     'method': 'DELETE',
     'path': 'relation/:id(\\d+)',
-    'process': function(req, res) {
+    'process': function (req, res) {
       res.status({
         'statusCode': 501
       });
@@ -262,7 +290,7 @@ module.exports = function(config) {
     'description': 'Creates the relation, returns new relation number (always version=1?).',
     'method': 'PUT',
     'path': 'relation/create',
-    'process': function(req, res) {
+    'process': function (req, res) {
       res.status({
         'statusCode': 501
       });
@@ -272,7 +300,7 @@ module.exports = function(config) {
     'description': 'Returns all versions of the relation.',
     'method': 'GET',
     'path': 'relation/:id(\\d+)/history',
-    'process': function(req, res) {
+    'process': function (req, res) {
       var query = queries.select.all.relations.concat('WHERE', queries.where.all.relation.id).join('\n');
       database(req, res).query(query, 'relation', apiFunctions.respond);
     }
@@ -281,7 +309,7 @@ module.exports = function(config) {
     'description': 'Returns all relations that this relation appears in.',
     'method': 'GET',
     'path': 'relation/:id(\\d+)/relations',
-    'process': function(req, res) {
+    'process': function (req, res) {
       var query = queries.select.current.relations.concat(
         'JOIN (',
         queries.select.current.relationsWithRelation,
@@ -295,15 +323,15 @@ module.exports = function(config) {
     'description': 'Returns all ways and nodes in this relation and relations directly members of this relation.',
     'method': 'GET',
     'path': 'relation/:id(\\d+)/full',
-    'process': function(req, res) {
-      //TODO: Clean this up, somehow?
+    'process': function (req, res) {
+      // TODO: Clean this up, somehow?
       var queryList = [{
         'type': 'relation',
         'query': queries.select.current.relations.concat(
           'JOIN (',
           queries.select.current.relationsWithRelation,
           'UNION',
-          'SELECT \'{{id}}\' as relation_id',
+          "SELECT '{{id}}' as relation_id",
           ') relations_with_relation ON api_current_relations.id = relations_with_relation.relation_id'
         ).join('\n')
       }, {
@@ -329,11 +357,88 @@ module.exports = function(config) {
       database(req, res).query(queryList, null, apiFunctions.respond);
     }
   }, {
+    'name': 'GET relation/#id/uninteresting',
+    'description': 'Returns all ways and nodes in this relation and relations directly members of this relation.',
+    'method': 'GET',
+    'path': 'relation/:id(\\d+)/uninteresting',
+    'process': function (req, res) {
+      req.params.uninterestingTags = config.iD.settings.tags.disabledFields.concat(config.iD.settings.tags.uninterestingFields);
+      var queryList = [{
+        'type': 'relation',
+        'query': queries.select.current.relations.concat(
+          'JOIN (',
+          queries.select.current.relationsWithRelation,
+          'UNION',
+          "SELECT '{{id}}' as relation_id",
+          ') relations_with_relation ON api_current_relations.id = relations_with_relation.relation_id'
+        ).join('\n')
+      }, {
+        'type': 'way',
+        'query': queries.select.current.ways.concat(
+          'JOIN (',
+          'SELECT way_id',
+          'FROM (',
+          '  SELECT DISTINCT',
+          '    current_relation_members.member_id AS way_id,',
+          '    (',
+          '      SELECT Count(*)',
+          '      FROM current_way_tags',
+          '      WHERE  current_way_tags.way_id = current_relation_members.member_id',
+          '        AND current_way_tags.k NOT IN',
+          "         (SELECT json_array_elements_text(('{{uninterestingTags}}')::json)::text)",
+          '    ) AS tags,',
+          '    (',
+          '      SELECT Count(*)',
+          '      FROM current_relation_members current_relation_members2',
+          '      WHERE',
+          '        current_relation_members2.member_id = current_relation_members.member_id',
+          "        AND current_relation_members2.relation_id != '{{id}}'",
+          '    ) AS OTHERS',
+          '  FROM current_relation_members',
+          '  WHERE',
+          "    Lower(member_type::text) = 'way'",
+          "    AND relation_id = '{{id}}'",
+          ') t',
+          'WHERE',
+          '  t.tags = 0',
+          '  OR t.OTHERS = 0',
+          ') waysInRelation ON api_current_ways.id = waysInRelation.way_id'
+        ).join('\n')
+      }, {
+        'type': 'node',
+        'query': queries.select.current.nodes.concat(
+          'WHERE "id" in (SELECT node_id FROM (',
+          '  SELECT',
+          '    nodesInRelation.node_id,',
+          '    (SELECT count(*) FROM current_node_tags WHERE nodesInRelation.node_id = current_node_tags.node_id and k not in',
+          "      (SELECT json_array_elements_text(('{{uninterestingTags}}')::json)::text)",
+          '    ) AS "tags",',
+          '    (SELECT count(*) FROM current_way_nodes JOIN current_relation_members ON current_way_nodes.way_id = current_relation_members.member_id',
+          "      WHERE lower(current_relation_members.member_type::text) = 'way' AND current_relation_members.relation_id != '{{id}}'",
+          '      AND nodesInRelation.node_id = current_way_nodes.node_id',
+          '    ) as "ways",',
+          '    (SELECT count(*) FROM current_relation_members',
+          "      WHERE lower(current_relation_members.member_type::text) = 'node'",
+          "      AND current_relation_members.relation_id != '{{id}}'",
+          '      AND current_relation_members.member_id = nodesInRelation.node_id',
+          '    )  as "relations" FROM (',
+          queries.select.current.nodesInRelation,
+          'UNION',
+          queries.select.current.nodesInWay,
+          'JOIN (',
+          queries.select.current.waysInRelation,
+          ') ways_in_bbox ON current_way_nodes.way_id = ways_in_bbox.way_id',
+          ') nodesInRelation) uninterestingNodesInRelation WHERE tags = 0 AND ways = 0 AND relations = 0)'
+        ).join('\n')
+      }];
+      database(req, res).query(queryList, null, apiFunctions.respond);
+    }
+  }, {
     'name': 'GET relation/#id/#version',
     'description': 'Returns the XML for that version of the relation.',
     'method': 'GET',
     'path': 'relation/:id(\\d+)/:version(\\d+)',
-    'process': function(req, res) {
+    'process': function (req, res) {
       if (!isNaN(req.params.version)) {
         var query = queries.select.all.relations.concat('WHERE', queries.where.all.relation.id, 'AND', queries.where.all.relation.version).join('\n');
         database(req, res).query(query, 'relation', apiFunctions.respond);
@@ -350,7 +455,7 @@ module.exports = function(config) {
     'description': 'Returns the numbered relations.',
     'method': 'GET',
     'path': 'relations',
-    'process': function(req, res) {
+    'process': function (req, res) {
       apiFunctions.queryMultipleElements(req, res, 'relation', database);
     }
   }, {
@@ -359,12 +464,12 @@ module.exports = function(config) {
     'method': 'PUT',
     'path': 'changeset/create',
     'auth': apiFunctions.auth(config),
-    'process': function(req, res) {
-      apiFunctions.readXmlReq(req, function(error, data) {
+    'process': function (req, res) {
+      apiFunctions.readXmlReq(req, function (error, data) {
         // Add in the user id from the auth step
         // console.log('changing uid', req.params.uid);
         data.osm.changeset.user_id = req.params.uid;
-        apiFunctions.readOsmChange.changeset(data, database, function(result) {
+        apiFunctions.readOsmChange.changeset(data, database, function (result) {
           if (result && !result.error) {
             res.send(result.data.changeset[0].id, 'txt');
           } else {
@@ -381,7 +486,7 @@ module.exports = function(config) {
     'description': 'Returns the XML for that changeset.',
     'method': 'GET',
     'path': 'changeset/:id(\\d+)',
-    'process': function(req, res) {
+    'process': function (req, res) {
       if (!isNaN(req.params.id)) {
         var query = queries.select.all.changesets.concat('WHERE', queries.where.changeset.id).join('\n');
         database(req, res).query(query, 'changeset', apiFunctions.respond);
@@ -394,7 +499,7 @@ module.exports = function(config) {
         }, req);
       }
 
-      // TODO: Make sure id is a number
+    // TODO: Make sure id is a number
     }
   }, {
     'name': 'PUT changeset/#id',
@@ -402,11 +507,11 @@ module.exports = function(config) {
     'method': 'PUT',
     'path': 'changeset/:id(\\d+)',
     'auth': apiFunctions.auth(config),
-    'process': function(req, res) {
+    'process': function (req, res) {
       // JOSM uses this
-      apiFunctions.readXmlReq(req, function(error, data) {
-        apiFunctions.readOsmChange.changeset(data, database, function(result) {
-          if (result.data) {
+      apiFunctions.readXmlReq(req, function (error, data) {
+        apiFunctions.readOsmChange.changeset(data, database, function (result) {
+          if (!error && result.data) {
             res.send(result.data, 'xml');
           } else {
             res.status({
@@ -423,9 +528,9 @@ module.exports = function(config) {
     'method': 'PUT',
     'path': 'changeset/:id(\\d+)/close',
     'auth': apiFunctions.auth(config),
-    'process': function(req, res) {
-      var query = 'SELECT close_changeset from close_changeset(\'{{id}}\')';
-      database(req, res).query(query, 'changeset', function() {
+    'process': function (req, res) {
+      var query = "SELECT close_changeset from close_changeset('{{id}}')";
+      database(req, res).query(query, 'changeset', function () {
         res.send('', 'txt');
       });
     }
@@ -435,17 +540,17 @@ module.exports = function(config) {
     'method': 'POST',
     'path': 'changeset/:id(\\d+)/upload',
     'auth': apiFunctions.auth(config),
-    'process': function(req, res) {
-      apiFunctions.readXmlReq(req, function(error, data) {
-        apiFunctions.readOsmChange.changeset(data, database, function(result) {
-          if (result && result.data) {
+    'process': function (req, res) {
+      apiFunctions.readXmlReq(req, function (error, data) {
+        apiFunctions.readOsmChange.changeset(data, database, function (result) {
+          if (!error && result && result.data) {
             res.send(result.data, 'xml', {
               'wrapType': 'diffResult'
             });
           } else {
             res.status({
               'statusCode': result && result.error & result.error.code ? result.error.code : 400,
-              'details': result && result.details ? result.details : result
+              'details': result && result.details ? result.details : result || error
             });
           }
         });
@@ -457,7 +562,7 @@ module.exports = function(config) {
     'description': 'Downloads all the changed elements in a changeset in OsmChange format.',
     'method': 'GET',
     'path': 'changeset/:id(\\d+)/download',
-    'process': function(req, res) {
+    'process': function (req, res) {
       res.status({
         'statusCode': 501
       });
@@ -467,7 +572,7 @@ module.exports = function(config) {
     'description': 'Inserts a point into the bounding box of a changeset.',
     'method': 'POST',
     'path': 'changeset/:id(\\d+)/expand_bbox',
-    'process': function(req, res) {
+    'process': function (req, res) {
       res.status({
         'statusCode': 501
       });
@@ -477,7 +582,7 @@ module.exports = function(config) {
     'description': 'Queries changesets on bounding box, user or time range.',
     'method': 'GET',
     'path': 'changesets',
-    'process': function(req, res) {
+    'process': function (req, res) {
       // Not sure? //JOSM uses this
       res.status({
         'statusCode': 200
@@ -488,18 +593,17 @@ module.exports = function(config) {
     'description': 'Gets all the way, nodes and relations inside a bounding box.',
     'method': 'GET',
     'path': 'map',
-    'process': function(req, res) {
+    'process': function (req, res) {
+      var query = "SELECT bounds, node, way, relation, limits FROM getBbox('{{minLat}}', '{{minLon}}', '{{maxLat}}', '{{maxLon}}', '{{wayNodes}}')";
 
-      var query = 'SELECT bounds, node, way, relation, limits FROM getBbox(\'{{minLat}}\', \'{{minLon}}\', \'{{maxLat}}\', \'{{maxLon}}\', \'{{wayNodes}}\')';
-
-      req.params.minLon = req.query.bbox.split(',')[0]; //'-75.5419922';
-      req.params.minLat = req.query.bbox.split(',')[1]; //'39.7832127';
-      req.params.maxLon = req.query.bbox.split(',')[2]; //'-75.5364990';
-      req.params.maxLat = req.query.bbox.split(',')[3]; //'39.7874339';
+      req.params.minLon = req.query.bbox.split(',')[0]; // '-75.5419922';
+      req.params.minLat = req.query.bbox.split(',')[1]; // '39.7832127';
+      req.params.maxLon = req.query.bbox.split(',')[2]; // '-75.5364990';
+      req.params.maxLat = req.query.bbox.split(',')[3]; // '39.7874339';
       req.params.wayNodes = config.capabilities.waynodes.maximum;
 
       // Move this function up top?
-      database(req, res).query(query, 'map', function(expressRes, dbResult) {
+      database(req, res).query(query, 'map', function (expressRes, dbResult) {
         if (dbResult && dbResult.data && dbResult.data.map && dbResult.data.map[0]) {
           // Remove the 'map' layer so the result is uniform with all the other results
           dbResult.data = apiFunctions.deleteEmptyTags(dbResult.data.map[0]);
@@ -526,7 +630,7 @@ module.exports = function(config) {
     'description': 'Gets paginated trackpoints within a bounding box.',
     'method': 'GET',
     'path': 'trackpoints',
-    'process': function(req, res) {
+    'process': function (req, res) {
       // Paginate, trackpoints, not sure?
       res.status({
         'statusCode': 501
@@ -537,7 +641,7 @@ module.exports = function(config) {
     'description': 'Returns all changes within a given time period.',
     'method': 'GET',
     'path': 'changes',
-    'process': function(req, res) {
+    'process': function (req, res) {
       // How is this different from changesets?
       res.status({
         'statusCode': 501
@@ -549,7 +653,7 @@ module.exports = function(config) {
     'method': 'GET',
     'path': 'user/details',
     'auth': apiFunctions.auth(config),
-    'process': function(req, res) {
+    'process': function (req, res) {
       // TODO: make a view for this (I don't know if we really want/need it
       var query = 'SELECT id, display_name, (\'{"href": "\' || image_file_name || \'"}\')::json as img, replace((creation_time || \'Z\'),\' \',\'T\') as account_created FROM users WHERE id = \'{{uid}}\'';
       database(req, res).query(query, 'user', apiFunctions.respond);
@@ -560,11 +664,11 @@ module.exports = function(config) {
     'method': 'GET',
     'path': 'user/josm',
     'auth': apiFunctions.auth(config),
-    'process': function(req, res) {
+    'process': function (req, res) {
       // TODO: make a view for this (I don't know if we really want/need it
-      var query = 'SELECT access_token as accessToken, access_token_secret as accessTokenSecret FROM sessions WHERE user_id = \'{{uid}}\' order by created_time desc limit 1';
+      var query = "SELECT access_token as accessToken, access_token_secret as accessTokenSecret FROM sessions WHERE user_id = '{{uid}}' order by created_time desc limit 1";
       query = database().addParams(query, 'josm_settings', req.params);
-      database().query(query, 'josm_settings', function(_, data) {
+      database().query(query, 'josm_settings', function (_, data) {
         if (data && data.data && data.data.josm_settings && data.data.josm_settings[0]) {
           var josm = data.data.josm_settings[0];
           josm.consumerKey = config.oauth.consumerKey;
@@ -588,9 +692,8 @@ module.exports = function(config) {
     'description': 'Returns data from within the requested tile',
     'method': 'GET',
     'path': 'tile/:z(\\d+)/:x(\\d+)/:y(\\d+)',
-    'process': function(req, res) {
-
-      var query = 'SELECT bounds, node, way, relation, limits FROM getBbox(\'{{minLat}}\', \'{{minLon}}\', \'{{maxLat}}\', \'{{maxLon}}\', \'{{wayNodes}}\')';
+    'process': function (req, res) {
+      var query = "SELECT bounds, node, way, relation, limits FROM getBbox('{{minLat}}', '{{minLon}}', '{{maxLat}}', '{{maxLon}}', '{{wayNodes}}')";
 
       req.params.x = parseInt(req.params.x, 10);
       req.params.y = parseInt(req.params.y, 10);
@@ -602,7 +705,7 @@ module.exports = function(config) {
       req.params.wayNodes = config.capabilities.waynodes.maximum;
 
       // Move this function up top?
-      database(req, res).query(query, 'map', function(expressRes, dbResult) {
+      database(req, res).query(query, 'map', function (expressRes, dbResult) {
         if (dbResult && dbResult.data && dbResult.data.map && dbResult.data.map[0]) {
           // Remove the 'map' layer so the result is uniform with all the other results
           dbResult.data = apiFunctions.deleteEmptyTags(dbResult.data.map[0]);
@@ -626,3 +729,4 @@ module.exports = function(config) {
     }
   }];
 };
+

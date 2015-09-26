@@ -449,12 +449,12 @@ CREATE OR REPLACE VIEW pgs_current_relations AS
     users.display_name AS "user",
     changesets.user_id AS uid,
     ( SELECT json_agg(members.*) AS json_agg
-           FROM ( SELECT relation_members.relation_id, relation_members.member_id,
-                    upper(relation_members.member_type::char(1)) AS member_type,
-                    relation_members.member_role as member_role,
-                    relation_members.sequence_id AS sequence_id
-                   FROM relation_members
-                  WHERE relation_members.relation_id = current_relations.id) members) AS member,
+           FROM ( SELECT current_relation_members.relation_id, current_relation_members.member_id,
+                    upper(current_relation_members.member_type::char(1)) AS member_type,
+                    current_relation_members.member_role as member_role,
+                    current_relation_members.sequence_id AS sequence_id
+                   FROM current_relation_members
+                  WHERE current_relation_members.relation_id = current_relations.id) members) AS member,
     ( SELECT json_agg(tags.*) AS json_agg
            FROM ( SELECT current_relation_tags.k,
                     current_relation_tags.v

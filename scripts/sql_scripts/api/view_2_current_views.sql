@@ -208,3 +208,87 @@ FROM
   changesets
   JOIN users
     ON changesets.user_id = users.id;
+
+-----------
+-- Get created date and updated date, as well as min and max version
+DROP VIEW IF EXISTS api_element_info;
+CREATE VIEW api_element_info AS
+SELECT
+  "calculated_elements"."id",
+  "calculated_elements"."geometry",
+  "calculated_elements"."min_version",
+  "calculated_elements"."max_version",
+  "calculated_elements"."created_time",
+  "calculated_elements"."updated_time",
+  "calculated_elements"."created_changeset",
+  "calculated_elements"."updated_changeset"
+FROM (
+SELECT
+  "agg_elements"."id",
+  "agg_elements"."geometry",
+  "agg_elements"."min_version",
+  "agg_elements"."max_version",
+  (SELECT "timestamp"
+   FROM (
+     SELECT 
+       (json_array_elements("agg_elements"."times")->>'version')::int AS "version",
+       json_array_elements("agg_elements"."times")->>'timestamp' AS "timestamp"
+   ) "create_time"
+   WHERE "create_time"."version" =  "agg_elements"."min_version"
+  ) AS "created_time",
+  (SELECT "timestamp"
+   FROM (
+      SELECT
+        (json_array_elements("agg_elements"."times")->>'version')::int AS "version",
+        json_array_elements("agg_elements"."times")->>'timestamp' AS "timestamp"
+   ) "update_time"
+   WHERE "update_time"."version" =  "agg_elements"."max_version"
+   ) AS "updated_time",
+  (SELECT "changeset_id"
+   FROM (
+     SELECT 
+       (json_array_elements("agg_elements"."times")->>'version')::int AS "version",
+       json_array_elements("agg_elements"."times")->>'changeset_id' AS "changeset_id"
+   ) "create_time"
+   WHERE "create_time"."version" =  "agg_elements"."min_version"
+  ) AS "created_changeset",
+  (SELECT "changeset_id"
+   FROM (
+      SELECT
+        (json_array_elements("agg_elements"."times")->>'version')::int AS "version",
+        json_array_elements("agg_elements"."times")->>'changeset_id' AS "changeset_id"
+   ) "update_time"
+   WHERE "update_time"."version" =  "agg_elements"."max_version"
+   ) AS "updated_changeset"
+FROM 
+  (
+    SELECT
+      "nodes"."node_id" AS "id",
+      'n'::text AS "geometry",
+      min("nodes"."version") AS "min_version",
+      max("nodes"."version") AS "max_version",
+      json_agg((SELECT row_to_json("_") FROM (SELECT "version", "timestamp", "changeset_id") AS "_")) AS "times"
+    FROM
+      "nodes"
+    GROUP BY "node_id"
+    UNION ALL
+    SELECT
+      "ways"."way_id" AS "id",
+      'w'::text AS "geometry",
+      min("ways"."version") AS "min_version",
+      max("ways"."version") AS "max_version",
+      json_agg((SELECT row_to_json("_") FROM (SELECT "version", "timestamp", "changeset_id") AS "_")) AS "times"
+    FROM
+      "ways"
+    GROUP BY "way_id"
+    UNION ALL
+    SELECT
+      "relations"."relation_id" AS "id",
+      'r'::text AS "geometry",
+      min("relations"."version") AS "min_version",
+      max("relations"."version") AS "max_version",
+      json_agg((SELECT row_to_json("_") FROM (SELECT "version", "timestamp", "changeset_id") AS "_")) AS "times"
+    FROM
+      "relations"
+    GROUP BY "relation_id"
+  ) "agg_elements") "calculated_elements";

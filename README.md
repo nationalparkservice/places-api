@@ -35,6 +35,11 @@ The following steps are designed to be copied and pasted directly into your CLI.
 ####\#3. Either clone an existing set of places_api databases or run the database setup script:
   `bash ./scripts/create_osm_db.sh`
 
+####Notes:
+The default snapshot database name (poi_pgs) and owner (postgres) are configurable in config.json, however
+they are hardcoded into two functions (nps_dblink_pgs and nps_dblink_pgs_text) in sql_scripts/api/func_nps_tools.sql.
+If you choose to stray from the defaults, this file will need to be edited accordingly.
+
 ## Usage
 
 The iD editor that is include will not work be default, since it needs to be built.
