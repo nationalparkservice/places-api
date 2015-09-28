@@ -129,7 +129,9 @@ CREATE TABLE nps_render_log
 (
   render_id bigint,
   task_name character varying(255),
-  run_time timestamp without time zone
+  run_time timestamp without time zone,
+  end_time timestamp without time zone,
+  status character varying(255)
 );
 -----------------------------------------------------------------------
 
@@ -139,12 +141,18 @@ SELECT
   "nps_render_point"."osm_id" AS "cartodb_id",
   "nps_render_point"."version" AS "version",
   "nps_render_point"."tags" -> 'name'::text AS "name",
-  "nps_render_point"."tags" -> 'nps:places_id'::text AS "places_id",
-  "nps_render_point"."unit_code" AS "unit_code",
+  CASE
+    WHEN "nps_render_point"."osm_id" < 0 THEN
+      'r' || ("nps_render_point"."osm_id" * -1)
+    ELSE
+      'n' || "nps_render_point"."osm_id"
+  END AS "places_id",
+  lower("nps_render_point"."unit_code") AS "unit_code",
   "nps_render_point"."nps_type" AS "type",
-  "nps_render_point"."tags"::json::text AS tags,
-  "nps_render_point"."the_geom" AS the_geom
-FROM "nps_render_point";;
+  "nps_render_point"."tags"::json::text AS "tags",
+  "nps_render_point"."the_geom" AS "the_geom",
+  "nps_render_point"."rendered" AS "last_modified"
+FROM "nps_render_point";
 COMMENT ON VIEW public.nps_cartodb_point_view
   IS 'This view is designed to transform our internal nps_render_point table into the table we maintain in cartodb.';
   
@@ -163,7 +171,8 @@ CREATE OR REPLACE VIEW "nps_tilemill_point_view" AS
    FROM
      "nps_render_point"
      LEFT JOIN "render_park_polys" ON lower("nps_render_point"."unit_code") = lower("render_park_polys"."unit_code"::text)
-   WHERE "nps_render_point"."type" IS NOT NULL;-----------------------------------------------------------------------
+   WHERE "nps_render_point"."type" IS NOT NULL;
+-----------------------------------------------------------------------
 
 -----------------------------------------------------------------------
 CREATE OR REPLACE VIEW public.nps_cartodb_polygon_view AS
@@ -171,11 +180,17 @@ SELECT
   "nps_render_polygon"."osm_id" AS "cartodb_id",
   "nps_render_polygon"."version" AS "version",
   "nps_render_polygon"."tags" -> 'name'::text AS "name",
-  "nps_render_polygon"."tags" -> 'nps:places_id'::text AS "places_id",
+  CASE
+    WHEN "nps_render_polygon"."osm_id" < 0 THEN
+      'r' || ("nps_render_polygon"."osm_id" * -1)
+    ELSE
+      'w' || "nps_render_polygon"."osm_id"
+  END AS "places_id",
   "nps_render_polygon"."unit_code" AS "unit_code",
   "nps_render_polygon"."nps_type" AS "type",
   "nps_render_polygon"."tags"::json::text AS tags,
-  "nps_render_polygon"."the_geom" AS the_geom
+  "nps_render_polygon"."the_geom" AS the_geom,
+  "nps_render_polygon"."rendered" AS "last_modified"
 FROM "nps_render_polygon";;
 COMMENT ON VIEW public.nps_cartodb_polygon_view
   IS 'This view is designed to transform our internal nps_render_polygon table into the table we maintain in cartodb.';
@@ -188,11 +203,17 @@ SELECT
   "nps_render_line"."osm_id" AS "cartodb_id",
   "nps_render_line"."version" AS "version",
   "nps_render_line"."tags" -> 'name'::text AS "name",
-  "nps_render_line"."tags" -> 'nps:places_id'::text AS "places_id",
+  CASE
+    WHEN "nps_render_line"."osm_id" < 0 THEN
+      'r' || ("nps_render_line"."osm_id" * -1)
+    ELSE
+      'w' || "nps_render_line"."osm_id"
+  END AS "places_id",
   "nps_render_line"."unit_code" AS "unit_code",
   "nps_render_line"."nps_type" AS "type",
   "nps_render_line"."tags"::json::text AS tags,
-  "nps_render_line"."the_geom" AS the_geom
+  "nps_render_line"."the_geom" AS the_geom,
+  "nps_render_line"."rendered" AS "last_modified"
 FROM "nps_render_line";;
 COMMENT ON VIEW public.nps_cartodb_line_view
   IS 'This view is designed to transform our internal nps_render_line table into the table we maintain in cartodb.';
@@ -292,6 +313,7 @@ IF v_tag_count > 0 THEN
         WHEN "geometry" && v_geometry_type THEN "name"
         ELSE null
       END as "name",
+      "pathname",
       max("hstore_len") AS "hstore_len",
       count(*) AS "match_count",
       max("matchscore") as "matchscore",
@@ -300,6 +322,7 @@ IF v_tag_count > 0 THEN
     FROM (
       SELECT
         "name",
+        "pathname",
         "available_tags",
         "all_tags",
         "searchable",
@@ -310,6 +333,7 @@ IF v_tag_count > 0 THEN
       FROM (
         SELECT
           "name",
+          "pathname",
           each("tags") AS "available_tags",
           "tags" as "all_tags",
           "searchable",
@@ -319,6 +343,7 @@ IF v_tag_count > 0 THEN
         FROM (
           SELECT
             "hstore_tag_list"."name",
+            "hstore_tag_list"."pathname",
             "searchable",
             "matchscore",
             "geometry",
@@ -328,8 +353,9 @@ IF v_tag_count > 0 THEN
             (
               SELECT
                 "name",
+                "pathname",
                 json_to_hstore("tags") AS "tags",
-                "searchable",
+                COALESCE("searchable",false) as "searchable",
                 "matchscore",
                 "geometry"
               FROM
@@ -338,7 +364,6 @@ IF v_tag_count > 0 THEN
                 ((ARRAY['point'] && v_geometry_type AND "tag_list"."geometry" && ARRAY['point']) OR
                 (ARRAY['line','area'] && v_geometry_type AND "tag_list"."geometry" && ARRAY['line','area'])) AND
                 (v_all OR (
-                  "tag_list"."searchable" is null OR
                   "tag_list"."searchable" is true
                 ))
             ) "hstore_tag_list"
@@ -351,6 +376,7 @@ IF v_tag_count > 0 THEN
     GROUP BY
       "all_tags",
       "name",
+      "pathname",
       "geometry"
     ) "counted_tags"
   WHERE
@@ -781,13 +807,13 @@ $BODY$
     v_return_value boolean[];
   BEGIN
     SELECT array_agg(o2p_render_element(all_types.id, all_types.member_type)) FROM (
-      SELECT id, 'N'::character as member_type, changeset_id from api_nodes 
+      SELECT id, 'N'::character as member_type, changeset from api_nodes 
       UNION ALL
-      SELECT id, 'W'::character as member_type, changeset_id from api_ways
+      SELECT id, 'W'::character as member_type, changeset from api_ways
       UNION ALL
-      SELECT id, 'R'::character as member_type, changeset_id from api_relations
+      SELECT id, 'R'::character as member_type, changeset from api_relations
     ) all_types
-    WHERE all_types.changeset_id = v_changeset_id
+    WHERE all_types.changeset = v_changeset_id
     INTO v_return_value;
 
     RETURN v_return_value;
@@ -840,4 +866,7 @@ CREATE FOREIGN TABLE api_ways (id bigint, visible boolean, version bigint, chang
 CREATE FOREIGN TABLE api_relations (id bigint, visible boolean, version bigint, changeset bigint, "timestamp" timestamp without time zone, "user" text, "uid" bigint, member JSON, tag JSON) SERVER places_api OPTIONS (table_name 'pgs_current_relations');
 --DROP FOREIGN TABLE api_users;
 CREATE FOREIGN TABLE api_users (email character varying (255), id bigint, display_name character varying (255)) SERVER places_api OPTIONS (table_name 'users');
-
+--DROP FOREIGN TABLE api_changeset_tags;
+CREATE FOREIGN TABLE api_changeset_tags (changeset_id bigint, k text, v text) SERVER places_api OPTIONS (table_name 'changeset_tags');
+--DROP FOREIGN TABLE api_element_info;
+CREATE FOREIGN TABLE api_element_info (id bigint, geometry text, max_version bigint, created_time text, updated_time text, created_changeset text, updated_changeset text) SERVER places_api OPTIONS (table_name 'api_element_info');
