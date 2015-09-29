@@ -99,6 +99,7 @@ echo -e "\nCreate the '$snapshot' database\n================================\n"
     psql -d $snapshot -U $dbuser -c "CREATE EXTENSION postgis;"
     psql -d $snapshot -U $dbuser -c "CREATE EXTENSION postgis_topology;"
     psql -d $snapshot -U $dbuser -c "CREATE EXTENSION hstore;"
+    psql -d $snapshot -U $dbuser -c "CREATE EXTENSION postgres_fdw;"
     psql -d $snapshot -U $dbuser -f $includes_dir/db/sql/pgsnapshot_schema_0.6.sql
 done
 
