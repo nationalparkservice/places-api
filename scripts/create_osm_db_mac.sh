@@ -143,7 +143,7 @@ do
     echo -e "\nAdd custom SQL to '$api'\n================================\n"
     sed -e "s/{{owner}}/$dbuser/g" -e "s/{{snapshot}}/$snapshot/g" api_compiled.sql | psql -d $api -U $dbuser -f -
     echo -e "\nAdd custom SQL to '$snapshot'\n================================\n"
-     sed -e "s/{{owner}}/$dbuser/g" pgs_compiled.sql | psql -d $snapshot -U $dbuser -f -
+     sed -e "s/{{owner}}/$dbuser/g" -e "s/{{api}}/$api/g"  pgs_compiled.sql | psql -d $snapshot -U $dbuser -f -
 done
 
 rm *_compiled.sql
