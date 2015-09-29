@@ -158,8 +158,15 @@ module.exports = function(config) {
     'method': 'GET',
     'path': 'source/:id(\\d+)',
     'process': function (req, res) {
-      // Lookup the node in the database
-      var query = "select id, pgs_current_nodes.user from  pgs_current_nodes where changeset = '{{id}}'";
+      var query = "" +
+          "SELECT w.changeset_id, u.name as \"user\", 'create' as action, 'node' as element, w.id as places_id, w.tags->'nps:source_system_key_value' as gis_id, w.version, w.tstamp " +
+          "FROM nodes as w join users as u on u.id = w.user_id where w.tags ? 'nps:source_system_key_value' and w.changeset_id = '{{id}}' " +
+          "UNION " +
+          "SELECT w.changeset_id, u.name as \"user\", 'create' as action, 'way' as element, w.id as places_id, w.tags->'nps:source_system_key_value' as gis_id, w.version, w.tstamp " +
+          "FROM ways as w join users as u on u.id = w.user_id where w.tags ? 'nps:source_system_key_value' and w.changeset_id = '{{id}}' " +
+          "UNION " +
+          "SELECT w.changeset_id, u.name as \"user\", 'create' as action, 'relation' as element, w.id as places_id, w.tags->'nps:source_system_key_value' as gis_id, w.version, w.tstamp " +
+          "FROM relations as w join users as u on u.id = w.user_id where w.tags ? 'nps:source_system_key_value' and w.changeset_id = '{{id}}'";
       console.log(query);
       database(req, res).query(query, 'source', apiFunctions.respond);
     }
