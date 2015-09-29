@@ -151,5 +151,17 @@ module.exports = function(config) {
       }
 
     }
+  }, {
+    'name': 'GET source/:id(\\d+)',
+    'description': 'Gets source id for all elements in a changeset.',
+    'format': 'url',
+    'method': 'GET',
+    'path': 'source/:id(\\d+)',
+    'process': function (req, res) {
+      // Lookup the node in the database
+      var query = "select id, pgs_current_nodes.user from  pgs_current_nodes where changeset = '{{id}}'";
+      console.log(query);
+      database(req, res).query(query, 'source', apiFunctions.respond);
+    }
   }];
 };
