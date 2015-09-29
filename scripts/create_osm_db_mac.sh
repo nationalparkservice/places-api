@@ -84,10 +84,10 @@ do
 echo -e "\nCreate the '$api' database\n================================\n"
     dropdb --if-exists $api
     createdb -O $dbuser  -E UTF8 $api
-    # psql -d $api -c "CREATE EXTENSION plpgsql;" #installed by default in 9.x
-    psql -d $api -f $includes_dir/db/sql/structure.sql
-    psql -d $api -c "CREATE EXTENSION dblink;"
-    psql -d $api -c "CREATE EXTENSION hstore;"
+    # psql -d $api -U $dbuser -c "CREATE EXTENSION plpgsql;" #installed by default in 9.x
+    psql -d $api -U $dbuser -f $includes_dir/db/sql/structure.sql
+    psql -d $api -U $dbuser -c "CREATE EXTENSION dblink;"
+    psql -d $api -U $dbuser -c "CREATE EXTENSION hstore;"
 done
 
 for snapshot in $dbname_pgs_prod $dbname_pgs_test $dbname_pgs_dev;
@@ -95,11 +95,11 @@ do
 echo -e "\nCreate the '$snapshot' database\n================================\n"
     dropdb --if-exists $snapshot
     createdb -O $dbuser -E UTF8 $snapshot
-    # psql -d $snapshot -c "CREATE EXTENSION plpgsql;"  #installed by default in 9.x
-    psql -d $snapshot -c "CREATE EXTENSION postgis;"
-    psql -d $snapshot -c "CREATE EXTENSION postgis_topology;"
-    psql -d $snapshot -c "CREATE EXTENSION hstore;"
-    psql -d $snapshot -f $includes_dir/db/sql/pgsnapshot_schema_0.6.sql
+    # psql -d $snapshot -U $dbuser -c "CREATE EXTENSION plpgsql;"  #installed by default in 9.x
+    psql -d $snapshot -U $dbuser -c "CREATE EXTENSION postgis;"
+    psql -d $snapshot -U $dbuser -c "CREATE EXTENSION postgis_topology;"
+    psql -d $snapshot -U $dbuser -c "CREATE EXTENSION hstore;"
+    psql -d $snapshot -U $dbuser -f $includes_dir/db/sql/pgsnapshot_schema_0.6.sql
 done
 
 
@@ -141,9 +141,9 @@ do
     api=${dbs[0]}
     snapshot=${dbs[1]}
     echo -e "\nAdd custom SQL to '$api'\n================================\n"
-    sed -e "s/{{owner}}/$dbuser/g" -e "s/{{snapshot}}/$snapshot/g" api_compiled.sql | psql -d $api -f -
+    sed -e "s/{{owner}}/$dbuser/g" -e "s/{{snapshot}}/$snapshot/g" api_compiled.sql | psql -d $api -U $dbuser -f -
     echo -e "\nAdd custom SQL to '$snapshot'\n================================\n"
-    sed -e "s/{{owner}}/$dbuser/g" pgs_compiled.sql | psql -d $snapshot -f -
+     sed -e "s/{{owner}}/$dbuser/g" pgs_compiled.sql | psql -d $snapshot -U $dbuser -f -
 done
 
 rm *_compiled.sql
