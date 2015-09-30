@@ -36,18 +36,17 @@ To install on Mac OSX, see `./node_modules/places-api/scripts/create_osm_db_mac.
 ####\#3. Either clone an existing set of places_api databases or run the database setup script:
   `bash ./scripts/create_osm_db.sh`
 
-####Notes:
+#### Notes:
+
 The default snapshot database name (poi_pgs) and owner (postgres) are configurable in config.json, however
 they are hardcoded into two functions (nps_dblink_pgs and nps_dblink_pgs_text) in sql_scripts/api/func_nps_tools.sql.
 If you choose to stray from the defaults, this file will need to be edited accordingly.
 
 ## Usage
 
-The iD editor that is include will not work be default, since it needs to be built.
-You will need to remove the places-editor from the /node_modules directory and clone it in instead
-This is to ensure that you have all the dev dependencies.
+The iD editor that is include will not work be default, as it needs to be built. You will need to remove the places-editor directory from the /node_modules directory and clone it in instead. This will ensure that you have all the dev dependencies.
 
-After, it's cloned, edit the js/id/id.js file's npmap variable to reflect the path to your server/port.
+After it's cloned, edit the js/id/id.js file's npmap variable to reflect the path to your server/port.
 
 Once you do that, run an `npm install` on it and the `make` command.
 
