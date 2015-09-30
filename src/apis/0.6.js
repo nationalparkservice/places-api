@@ -564,15 +564,12 @@ module.exports = function (config) {
     'auth': apiFunctions.auth(config),
     'process': function (req, res) {
       //TODO: Error right away if the changeset isn't open(exists) or is not owned by the (authenticated) caller
-      console.log('Starting ASYNC Upload Changeset, params:', req.params);
       apiFunctions.readXmlReq(req, function (error, data) {
         if (!error && data) {
           res.send('', 'txt');
-          console.log('Sent response, start ASYNC processing of changeset');
           apiFunctions.readOsmChange.changeset(data, database, function (result) {
             var query = "SELECT close_changeset from close_changeset('{{id}}')";
             database(req, res).query(query, 'changeset');
-            console.log('Changeset ASYNC closed, params:', req.params, 'result: ', result);
           });
         } else {
           res.status({
