@@ -23,8 +23,9 @@ The following steps are designed to be copied and pasted directly into your CLI.
   `npm start`
 
 ##\#Database Setup
-\#This guide will detail the steps to installing the PostGIS database on an ubuntu machine.
-\#There is a [guide for windows](https://github.com/nationalparkservice/places-api/blob/places-api/scripts/tools/windowsInstall.txt) as well.
+This guide will detail the steps to installing the PostGIS database on an ubuntu machine.
+There is a [guide for windows](https://github.com/nationalparkservice/places-api/blob/places-api/scripts/tools/windowsInstall.txt) as well.
+To install on Mac OSX, see `./node_modules/places-api/scripts/create_osm_db_mac.sh`.
 
 ####\#1. Change to the API directory
   `cd ./node_modules/places-api/`
