@@ -132,7 +132,7 @@ module.exports = function(config) {
       }
 
       queryArray.push('TRUE');
-      queryArray.push(') nodes_in_query on pgs_current_nodes.id = nodes_in_query.node_id');
+      queryArray.push(') nodes_in_query ON pgs_current_nodes.id = nodes_in_query.node_id');
       var query = queryArray.join(' ');
 
       if (true) { //TODO: eliminate invalid queries
@@ -150,6 +150,25 @@ module.exports = function(config) {
         });
       }
 
+    }
+  }, {
+    'name': 'GET source/:id(\\d+)',
+    'description': 'Gets source id for all elements in a changeset.',
+    'format': 'url',
+    'method': 'GET',
+    'path': 'source/:id(\\d+)',
+    'process': function (req, res) {
+      var query = "" +
+          "SELECT n.changeset_id, u.name AS \"user\", 'create' AS action, 'node' AS element, n.id AS places_id, n.tags->'nps:source_system_key_value' AS gis_id, n.version, w.tstamp " +
+          "FROM nodes AS n JOIN users AS u ON u.id = n.user_id WHERE n.tags ? 'nps:source_system_key_value' AND n.changeset_id = '{{id}}' " +
+          "UNION ALL" +
+          "SELECT w.changeset_id, u.name AS \"user\", 'create' AS action, 'way' AS element, w.id AS places_id, w.tags->'nps:source_system_key_value' AS gis_id, w.version, w.tstamp " +
+          "FROM ways AS w JOIN users AS u ON u.id = w.user_id WHERE w.tags ? 'nps:source_system_key_value' AND w.changeset_id = '{{id}}' " +
+          "UNION ALL" +
+          "SELECT r.changeset_id, u.name AS \"user\", 'create' AS action, 'relation' AS element, r.id AS places_id, r.tags->'nps:source_system_key_value' AS gis_id, r.version, r.tstamp " +
+          "FROM relations AS w JOIN users AS u ON u.id = r.user_id WHERE r.tags ? 'nps:source_system_key_value' AND r.changeset_id = '{{id}}'";
+      console.log(query);
+      database(req, res).query(query, 'source', apiFunctions.respond);
     }
   }];
 };
