@@ -8,13 +8,9 @@ CREATE OR REPLACE FUNCTION upsert_changeset(
     v_id ALIAS FOR $1;
     v_user ALIAS FOR $2;
     v_tags ALIAS FOR $3;
-    v_timestamp timestamp without time zone;
     v_new_id bigint;
     v_return_json json;
     BEGIN
-      -- Set some values
-        v_timestamp := now();
-
       -- Determine if there needs to be a new changeset
     SELECT
       COALESCE((
@@ -45,8 +41,8 @@ CREATE OR REPLACE FUNCTION upsert_changeset(
       ) VALUES (
         v_new_id,
         v_user,
-        now(),
-        now()
+        now(),  -- in Postgres, now() returns the start time of the current transaction
+        now()   -- closed_at == created_at implies changeset is actually open not closed;
       );
     END IF;
 
