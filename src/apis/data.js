@@ -132,7 +132,7 @@ module.exports = function(config) {
       }
 
       queryArray.push('TRUE');
-      queryArray.push(') nodes_in_query on pgs_current_nodes.id = nodes_in_query.node_id');
+      queryArray.push(') nodes_in_query ON pgs_current_nodes.id = nodes_in_query.node_id');
       var query = queryArray.join(' ');
 
       if (true) { //TODO: eliminate invalid queries
@@ -159,14 +159,14 @@ module.exports = function(config) {
     'path': 'source/:id(\\d+)',
     'process': function (req, res) {
       var query = "" +
-          "SELECT w.changeset_id, u.name as \"user\", 'create' as action, 'node' as element, w.id as places_id, w.tags->'nps:source_system_key_value' as gis_id, w.version, w.tstamp " +
-          "FROM nodes as w join users as u on u.id = w.user_id where w.tags ? 'nps:source_system_key_value' and w.changeset_id = '{{id}}' " +
-          "UNION " +
-          "SELECT w.changeset_id, u.name as \"user\", 'create' as action, 'way' as element, w.id as places_id, w.tags->'nps:source_system_key_value' as gis_id, w.version, w.tstamp " +
-          "FROM ways as w join users as u on u.id = w.user_id where w.tags ? 'nps:source_system_key_value' and w.changeset_id = '{{id}}' " +
-          "UNION " +
-          "SELECT w.changeset_id, u.name as \"user\", 'create' as action, 'relation' as element, w.id as places_id, w.tags->'nps:source_system_key_value' as gis_id, w.version, w.tstamp " +
-          "FROM relations as w join users as u on u.id = w.user_id where w.tags ? 'nps:source_system_key_value' and w.changeset_id = '{{id}}'";
+          "SELECT n.changeset_id, u.name AS \"user\", 'create' AS action, 'node' AS element, n.id AS places_id, n.tags->'nps:source_system_key_value' AS gis_id, n.version, w.tstamp " +
+          "FROM nodes AS n JOIN users AS u ON u.id = n.user_id WHERE n.tags ? 'nps:source_system_key_value' AND n.changeset_id = '{{id}}' " +
+          "UNION ALL" +
+          "SELECT w.changeset_id, u.name AS \"user\", 'create' AS action, 'way' AS element, w.id AS places_id, w.tags->'nps:source_system_key_value' AS gis_id, w.version, w.tstamp " +
+          "FROM ways AS w JOIN users AS u ON u.id = w.user_id WHERE w.tags ? 'nps:source_system_key_value' AND w.changeset_id = '{{id}}' " +
+          "UNION ALL" +
+          "SELECT r.changeset_id, u.name AS \"user\", 'create' AS action, 'relation' AS element, r.id AS places_id, r.tags->'nps:source_system_key_value' AS gis_id, r.version, r.tstamp " +
+          "FROM relations AS w JOIN users AS u ON u.id = r.user_id WHERE r.tags ? 'nps:source_system_key_value' AND r.changeset_id = '{{id}}'";
       console.log(query);
       database(req, res).query(query, 'source', apiFunctions.respond);
     }
