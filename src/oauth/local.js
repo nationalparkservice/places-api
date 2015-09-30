@@ -75,6 +75,7 @@ module.exports = function(config) {
     authorize: function(req, res) {
       var query = {
           oauth_token: req.query.oauth_token,
+          oauth_message_host: req.query.oauth_message_host,
           addUser: req.protocol + '://' + req.get('host') + '/oauth/add_active_directory_user'
         },
         returnUrl = req.query.oauth_callback,
