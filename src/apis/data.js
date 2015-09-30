@@ -159,13 +159,13 @@ module.exports = function(config) {
     'path': 'source/:id(\\d+)',
     'process': function (req, res) {
       var query = "" +
-          "SELECT n.changeset_id, u.name AS \"user\", 'create' AS action, 'node' AS element, n.id AS places_id, n.tags->'nps:source_system_key_value' AS gis_id, n.version, n.tstamp AT TIME ZONE 'UTC' " +
+          "SELECT n.changeset_id, u.name AS \"user\", 'create' AS action, 'node' AS element, n.id AS places_id, n.tags->'nps:source_system_key_value' AS gis_id, n.version, n.tstamp AT TIME ZONE 'UTC' AS timestamp " +
           "FROM nodes AS n JOIN users AS u ON u.id = n.user_id WHERE n.tags ? 'nps:source_system_key_value' AND n.changeset_id = '{{id}}' " +
           "UNION ALL " +
-          "SELECT w.changeset_id, u.name AS \"user\", 'create' AS action, 'way' AS element, w.id AS places_id, w.tags->'nps:source_system_key_value' AS gis_id, w.version, w.tstamp AT TIME ZONE 'UTC' " +
+          "SELECT w.changeset_id, u.name AS \"user\", 'create' AS action, 'way' AS element, w.id AS places_id, w.tags->'nps:source_system_key_value' AS gis_id, w.version, w.tstamp AT TIME ZONE 'UTC' AS timestamp " +
           "FROM ways AS w JOIN users AS u ON u.id = w.user_id WHERE w.tags ? 'nps:source_system_key_value' AND w.changeset_id = '{{id}}' " +
           "UNION ALL " +
-          "SELECT r.changeset_id, u.name AS \"user\", 'create' AS action, 'relation' AS element, r.id AS places_id, r.tags->'nps:source_system_key_value' AS gis_id, r.version, r.tstamp AT TIME ZONE 'UTC' " +
+          "SELECT r.changeset_id, u.name AS \"user\", 'create' AS action, 'relation' AS element, r.id AS places_id, r.tags->'nps:source_system_key_value' AS gis_id, r.version, r.tstamp AT TIME ZONE 'UTC' AS timestamp " +
           "FROM relations AS r JOIN users AS u ON u.id = r.user_id WHERE r.tags ? 'nps:source_system_key_value' AND r.changeset_id = '{{id}}'";
       console.log(query);
       database(req, res).query(query, 'source', apiFunctions.respond);
