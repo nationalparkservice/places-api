@@ -557,6 +557,29 @@ module.exports = function (config) {
       });
     }
   }, {
+    'name': 'PUT changeset/#id/upload_async',
+    'description': 'Returns after receiving the upload file, then updates __and closes__ the changeset.',
+    'method': 'POST',
+    'path': 'changeset/:id(\\d+)/upload_async',
+    'auth': apiFunctions.auth(config),
+    'process': function (req, res) {
+      //TODO: Error right away if the changeset isn't open(exists) or is not owned by the (authenticated) caller
+      apiFunctions.readXmlReq(req, function (error, data) {
+        if (!error && data) {
+          res.send('', 'txt');
+          apiFunctions.readOsmChange.changeset(data, database, function (result) {
+            var query = "SELECT close_changeset from close_changeset('{{id}}')";
+            database(req, res).query(query, 'changeset');
+          });
+        } else {
+          res.status({
+            'statusCode': 400,
+            'details': error
+          });
+        }
+      });
+    }
+  }, {
     // http://wiki.openstreetmap.org/wiki/OsmChange
     'name': 'GET changeset/#id/download',
     'description': 'Downloads all the changed elements in a changeset in OsmChange format.',
