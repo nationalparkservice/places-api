@@ -194,7 +194,7 @@ SELECT
   changesets.user_id as uid,
   changesets.created_at AT TIME ZONE 'UTC' as created_at,
   changesets.closed_at AT TIME ZONE 'UTC' as closed_at,
-  (select (closed_at>created_at AND num_changes<=50000) AS open from changesets open where open.id = changesets.id) as open,
+  closed_at = created_at AS open,
   changesets.min_lat/10000000::float as min_lat,
   changesets.min_lon/10000000::float as min_lon,
   changesets.max_lat/10000000::float as max_lat,
