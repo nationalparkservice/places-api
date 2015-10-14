@@ -1,5 +1,6 @@
 /* jshint camelcase: false */
 var apiFunctions = require('./apiFunctions');
+var queries = require('./sql/dataSql');
 
 // These are all the calls we need to handle
 module.exports = function (config) {
@@ -166,6 +167,19 @@ module.exports = function (config) {
         "FROM relations AS r JOIN users AS u ON u.id = r.user_id WHERE r.tags ? 'nps:source_system_key_value' AND r.changeset_id = '{{id}}'";
       console.log(query);
       database(req, res).query(query, 'source', apiFunctions.respond);
+    }
+  }, {
+    'name': 'GET changesetsByTime/:startTime/:endTime?timeZone=UTC&unitCodes=#code,#code,...',
+    'description': 'Gets source id for all elements in a changeset.',
+    'format': 'url',
+    'method': 'GET',
+    'path': 'changesetsByTime/:startTime/:endTime',
+    'process': function (req, res) {
+      // Params = startTime, endTime, unitCodes, timeZone
+      console.log(req.query);
+      req.params.timeZone = req.query.timeZone || 'UTC';
+      req.params.unitCodes = req.query.unitCodes ? req.query.unitCodes.split(',') : [];
+      database(req, res).query(queries.changesetsByTime.join('\n'), 'changesetsByTime', apiFunctions.respond);
     }
   }];
 };
