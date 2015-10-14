@@ -1,16 +1,15 @@
-var Bluebird = require('bluebird'),
-  errorLogger = require('./errorLogger'),
-  pg = require('pg');
+var Bluebird = require('bluebird');
+var errorLogger = require('./errorLogger');
+var pg = require('pg');
 
-module.exports = function(dbtype, config) {
+module.exports = function (dbtype, config) {
   if (!dbtype || !config || !config.database || !config.database[dbtype]) {
     errorLogger.debug('--dbtype error--', dbtype);
-    throw 'invalid database type';
+    throw new Error('invalid database type');
   }
-  return function(req, res) {
-
+  return function (req, res) {
     var databaseTools = {
-      database: function(callback) {
+      database: function (callback) {
         var connectionString = [
           'postgres://',
           config.database.username,
@@ -23,14 +22,15 @@ module.exports = function(dbtype, config) {
         ].join('');
         pg.connect(connectionString, callback);
       },
-      addParams: function(query, type, params) {
+      addParams: function (query, type, params) {
         // TODO: This should use handlebars or something like it
-        var newQuery = query,
-          paramArray = [],
-          re = function(name) {
-            return new RegExp('\'{{' + name + '}}\'', 'g');
-          },
-          paramIndex, param;
+        var newQuery = query;
+        var paramArray = [];
+        var re = function (name) {
+          return new RegExp("'{{" + name + "}}'", 'g');
+        };
+        var paramIndex;
+        var param;
 
         // Allow another set of params to be passed in
         if (req && req.params) {
@@ -38,7 +38,7 @@ module.exports = function(dbtype, config) {
         }
 
         for (paramIndex in params) {
-          if (typeof(params[paramIndex]) === 'object' && !Array.isArray(params[paramIndex])) {
+          if (typeof (params[paramIndex]) === 'object' && !Array.isArray(params[paramIndex])) {
             // Allow JSON as a param
             param = JSON.stringify(params[paramIndex]);
           } else {
@@ -57,14 +57,14 @@ module.exports = function(dbtype, config) {
           'type': type
         };
       },
-      runIndividualQuery: function(query, params, client, type) {
-        return new Bluebird(function(resolve, reject) {
+      runIndividualQuery: function (query, params, client, type) {
+        return new Bluebird(function (resolve, reject) {
           var queryResult = {};
           var startTime = new Date();
           errorLogger.debug('Starting ' + type);
           errorLogger.debug('Query', query);
           errorLogger.debug('Params', params);
-          client.query(query, params, function(err, results) {
+          client.query(query, params, function (err, results) {
             if (err) {
               errorLogger.debug('finished ' + type + ' with error after: ' + (new Date() - startTime) + 'ms');
               errorLogger.debug('error: ', err);
@@ -84,9 +84,9 @@ module.exports = function(dbtype, config) {
           });
         });
       },
-      processResponse: function(dbResult) {
+      processResponse: function (dbResult) {
         var response = {};
-        dbResult.map(function(thisResult) {
+        dbResult.map(function (thisResult) {
           for (var responseType in thisResult) {
             for (var dataType in thisResult[responseType]) {
               if (!response[responseType]) {
@@ -101,10 +101,11 @@ module.exports = function(dbtype, config) {
         });
         return response;
       },
-      query: function(query, type, callback) {
-        var queryResult = {},
-          paramQuery, requestList = [];
-        databaseTools.database(function(err, client, done) {
+      query: function (query, type, callback) {
+        var queryResult = {};
+        var paramQuery;
+        var requestList = [];
+        databaseTools.database(function (err, client, done) {
           if (err) {
             queryResult.error = {
               'code': '500'
@@ -118,9 +119,9 @@ module.exports = function(dbtype, config) {
             if (Object.prototype.toString.call(query) !== '[object Array]') {
               query = [query];
             }
-            query.map(function(thisQuery) {
+            query.map(function (thisQuery) {
               // Allow queries to come in with their parameters already set {query: '', queryParams: ''}
-              if (typeof(thisQuery) === 'object' && thisQuery.query) {
+              if (typeof (thisQuery) === 'object' && thisQuery.query) {
                 paramQuery = thisQuery;
               } else {
                 paramQuery = databaseTools.addParams(thisQuery, type);
@@ -132,24 +133,23 @@ module.exports = function(dbtype, config) {
               requestList.push(databaseTools.runIndividualQuery(paramQuery.query, paramQuery.queryParams, client, paramQuery.type));
             });
 
-            Bluebird.all(requestList).then(function(newResult) {
+            Bluebird.all(requestList).then(function (newResult) {
               done();
               if (callback) {
                 callback(res, databaseTools.processResponse(newResult), req);
               }
-            }).catch(function(e) {
+            }).catch(function (e) {
               callback(res, e, req);
             });
           }
-
         });
       },
       translateField: {
-        '17987': function(hstore) {
-          //hstore
+        '17987': function (hstore) {
+          // hstore
           var returnValue = [];
 
-          hstore.split('", "').map(function(tag) {
+          hstore.split('", "').map(function (tag) {
             var tags = tag.split('=>');
             returnValue.push({
               'k': tags[0].replace(/"$|^"/g, ''),
@@ -159,21 +159,25 @@ module.exports = function(dbtype, config) {
 
           return returnValue;
         },
-        '25846': function(hstore) {
+        '25846': function (hstore) {
           return databaseTools.translateField['17987'](hstore);
         },
-        '114': function(json) {
+        '114': function (json) {
           return json;
         },
-        '1184': function(timestamp) {
-          // timestamp
-          return timestamp.toISOString().replace('.000', '');
+        '1114': function (timestamp) {
+          // timestamp without time zone
+          return databaseTools.translateField['1184'](timestamp);
         },
-        '1016': function(ints) {
-          //Array of ints
+        '1184': function (timestamp) {
+          // timestamp with time zone
+          return timestamp.toISOString();
+        },
+        '1016': function (ints) {
+          // Array of ints
           var returnValue = [];
 
-          ints.toString().split(',').map(function(val) {
+          ints.toString().split(',').map(function (val) {
             returnValue.push({
               'ref': val
             });
@@ -182,15 +186,15 @@ module.exports = function(dbtype, config) {
           return returnValue;
         }
       },
-      parse: function(results, type) {
-        var returnValue = {},
-          returnRow;
+      parse: function (results, type) {
+        var returnValue = {};
+        var returnRow;
         returnValue[type] = [];
 
-        results.rows.map(function(row) {
+        results.rows.map(function (row) {
           returnRow = {};
-          results.fields.map(function(field) {
-            if (row[field.name] || typeof(row[field.name]) === 'boolean') {
+          results.fields.map(function (field) {
+            if (row[field.name] || typeof (row[field.name]) === 'boolean') {
               if (databaseTools.translateField[field.dataTypeID]) {
                 returnRow[field.name] = databaseTools.translateField[field.dataTypeID](row[field.name]);
               } else {
