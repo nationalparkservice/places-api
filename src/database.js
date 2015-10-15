@@ -38,9 +38,14 @@ module.exports = function (dbtype, config) {
         }
 
         for (paramIndex in params) {
-          if (typeof (params[paramIndex]) === 'object' && !Array.isArray(params[paramIndex])) {
+          if (typeof (params[paramIndex]) === 'object') {
             // Allow JSON as a param
-            param = JSON.stringify(params[paramIndex]);
+	    if (params.sendAsJson && Array.isArray(params[paramIndex])) {
+              // Allows us to over ride this in special cases
+              param = params[paramIndex];
+            } else {
+              param = JSON.stringify(params[paramIndex]);
+            }
           } else {
             param = params[paramIndex];
           }
