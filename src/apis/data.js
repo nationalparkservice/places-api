@@ -178,6 +178,7 @@ module.exports = function (config) {
       // Params = startTime, endTime, unitCodes, timeZone
       console.log(req.query);
       req.params.timeZone = req.query.timeZone || 'UTC';
+      req.params.sendAsJson = true;
       req.params.unitCodes = req.query.unitCodes ? req.query.unitCodes.split(',') : [];
       database(req, res).query(queries.changesetsByTime.join('\n'), 'changesetsByTime', apiFunctions.respond);
     }
