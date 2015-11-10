@@ -117,8 +117,12 @@ CREATE OR REPLACE VIEW pgs_current_ways AS
                     current_way_nodes.node_id,
                     current_way_nodes.sequence_id
                    FROM current_way_nodes
-                  WHERE current_way_nodes.way_id = current_ways.id AND current_ways.version = current_ways.version
-                  ORDER BY current_way_nodes.sequence_id) nodes) AS nd,
+                  WHERE way_nodes.way_id = current_ways.id AND way_nodes.version = current_ways.version AND (
+                    SELECT visible
+                    FROM current_nodes
+                    WHERE current_nodes.id = way_nodes.node_id
+                    LIMIT 1
+                  ) = true                  ORDER BY current_way_nodes.sequence_id) nodes) AS nd,
     ( SELECT json_agg(tags.*) AS json_agg
            FROM ( SELECT current_way_tags.way_id,
                     current_way_tags.k,
