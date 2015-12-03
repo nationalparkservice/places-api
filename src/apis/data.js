@@ -204,6 +204,7 @@ module.exports = function (config) {
       req.params.sendAsJson = true;
       for (var item in req.query) {
         if (params[item]) {
+          req.params[item] = req.query[item];
           whereClause += ' ' + params[item] + "'{{" + item + "}}'";
         }
       }
