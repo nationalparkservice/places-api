@@ -200,21 +200,20 @@ module.exports = function (config) {
         'changeset_id': 'changeset_id = ',
         'changeset_comment_contains': "(changeset_tags->'comment')::text ~* "
       };
-      var whereClause = 'WHERE';
+      var whereClause = [];
       req.params.sendAsJson = true;
       for (var item in req.query) {
         if (params[item]) {
           req.params[item] = req.query[item];
-          whereClause += ' ' + params[item] + "'{{" + item + "}}'";
+          whereClause.push(' ' + params[item] + "'{{" + item + "}}'");
         }
       }
-      if (whereClause === 'WHERE') {
+      if (whereClause.length === 0) {
         res.status({
           'statusCode': 501
         });
       } else {
-        console.log('QUERY: ', query + ' ' + whereClause + ';');
-        database(req, res).query(query + ' ' + whereClause + ';', 'summary', apiFunctions.respond);
+        database(req, res).query(query + ' WHERE ' + whereClause.join(' AND ') + ';', 'summary', apiFunctions.respond);
       }
     }
   }];
