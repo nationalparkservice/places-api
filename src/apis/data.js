@@ -182,5 +182,39 @@ module.exports = function (config) {
       req.params.unitCodes = req.query.unitCodes ? req.query.unitCodes.split(',') : [];
       database(req, res).query(queries.changesetsByTime.join('\n'), 'changesetsByTime', apiFunctions.respond);
     }
+  }, {
+    'name': 'GET summary?start_time=&end_time=&user_name=&user_id&unit_code=&editor=&changeset_id&changeset_comment_contains=',
+    'description': 'Creates a summary entry based on parameters from the user',
+    'format': 'url',
+    'method': 'GET',
+    'path': 'summary',
+    'process': function (req, res) {
+      var query = 'SELECT * FROM summary';
+      var params = {
+        'start_time': 'tstamp >= ',
+        'end_time': 'tstamp <= ',
+        'user_name': 'username = ',
+        'user_id': 'user_id = ',
+        'unit_code': 'unit_code = ',
+        'editor': "(changeset_tags->'created_by')::text ~* ",
+        'changeset_id': 'changeset_id = ',
+        'changeset_comment_contains': "(changeset_tags->'comment')::text ~* "
+      };
+      var whereClause = 'WHERE';
+      req.params.sendAsJson = true;
+      for (var item in req.query) {
+        if (params[item]) {
+          whereClause += ' ' + params[item] + '{{params[item]}}';
+        }
+      }
+      if (whereClause === 'WHERE') {
+        res.status({
+          'statusCode': 501
+        });
+      } else {
+        console.log('QUERY: ', query + ' ' + whereClause + ';');
+        database(req, res).query(query + ' ' + whereClause + ';', 'summary', apiFunctions.respond);
+      }
+    }
   }];
 };
