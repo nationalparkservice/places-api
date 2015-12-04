@@ -905,7 +905,7 @@ SELECT
   ("elements"."changeset_tags"::json -> 'comment')::text AS "changeset_comment",
   ("elements"."changeset_tags"::json -> 'imagery_used')::text AS "changeset_imagery",
   "elements"."tags"->'nps:unit_code' AS "unit_code",
-  "render_park_polys"."long_name" AS "unit_name",
+  (SELECT "long_name" FROM "render_park_polys" WHERE lower("elements"."tags" -> 'nps:unit_code') = lower("render_park_polys"."unit_code") LIMIT 1) AS "unit_name",
   "elements"."user_id" as "user_id",
   "users"."name" AS "user_name"
 FROM (
@@ -924,7 +924,7 @@ FROM (
     (select hstore(array_agg(k), array_agg(v)) from json_populate_recordset(null::new_hstore,(SELECT json_agg("result") FROM (SELECT "k", "v" FROM "api_changeset_tags" WHERE "api_changeset_tags"."changeset_id" = "nodes"."changeset_id") "result")))::json AS "changeset_tags",
     "nodes"."user_id" as "user_id"
   FROM
-    nps_render_point JOIN nodes ON nodes.id = osm_id
+    nps_render_point LEFT JOIN nodes ON nodes.id = osm_id
   UNION ALL
   SELECT
     "nps_render_line"."osm_id",
@@ -992,8 +992,7 @@ FROM (
       LEFT JOIN "ways" ON "nps_render_polygon"."osm_id" = "ways"."id"
       LEFT JOIN "relations" ON "nps_render_polygon"."osm_id" * -1 = "relations"."id"
 ) AS "elements"
-  LEFT JOIN "users" ON "elements"."user_id" = "users"."id"
-  LEFT JOIN "render_park_polys" ON lower("elements"."tags" -> 'nps:unit_code') = lower("render_park_polys"."unit_code");
+  LEFT JOIN "users" ON "elements"."user_id" = "users"."id";
   
 CREATE TABLE summary_sync AS SELECT * FROM summary_view;
 
