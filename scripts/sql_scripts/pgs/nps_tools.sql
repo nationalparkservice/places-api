@@ -671,7 +671,9 @@ WHERE
 
 -- DROP FUNCTION public.o2p_render_element(bigint, character);
 
-CREATE OR REPLACE FUNCTION public.o2p_render_element(bigint, character)
+CREATE OR REPLACE FUNCTION public.o2p_render_element(
+    bigint,
+    character)
   RETURNS boolean AS
 $BODY$
   DECLARE
@@ -684,7 +686,7 @@ $BODY$
     IF UPPER(v_member_type) = 'R' THEN
       SELECT v_id * -1 INTO v_id;
     END IF;
-  
+
   -- Add any information that will be deleting / changing
   -- to the change log, which is used to keep the renderers synchronized
     IF UPPER(v_member_type) = 'N' THEN
@@ -715,14 +717,16 @@ $BODY$
           "osm_id" AS "osm_id",
           "version" AS "version",
           "name" AS "name",
-          "fcat" AS "type",
-          "nps_fcat" AS "nps_type",
+          "superclass" AS "superclass",
+          "class" AS "class",
+          "type" AS "type",
+          "v1_type" AS "v1_type",
           "tags" AS "tags",
           "created" AS "rendered",
           "way" AS "the_geom",
           "z_order" AS "z_order",
           "unit_code" AS "unit_code"
-        FROM "nps_planet_osm_point_view"
+        FROM "nps_render_point_view"
         WHERE "osm_id" = v_id
       );
     ELSE
@@ -762,40 +766,50 @@ $BODY$
           "osm_id" AS "osm_id",
           "version" AS "version",
           "name" AS "name",
-          "fcat" AS "type",
-          "nps_fcat" AS "nps_type",
+          "superclass" AS "superclass",
+          "class" AS "class",
+          "type" AS "type",
+          "v1_type" AS "v1_type",
           "tags" AS "tags",
           "created" AS "rendered",
           "way" AS "the_geom",
           "z_order" AS "z_order",
           "unit_code" AS "unit_code"
-        FROM "nps_planet_osm_polygon_view"
+        FROM "nps_render_polygon_view"
         WHERE "osm_id" = v_id
       );
 
-      DELETE FROM "nps_render_line" WHERE osm_id = v_id;
+      DELETE FROM "nps_render_line" WHERE "osm_id" = v_id;
       INSERT INTO "nps_render_line" (
         SELECT
           "osm_id" AS "osm_id",
           "version" AS "version",
           "name" AS "name",
-          "fcat" AS "type",
-          "nps_fcat" AS "nps_type",
           "tags" AS "tags",
           "created" AS "rendered",
           "way" AS "the_geom",
+          "superclass" AS "superclass",
+          "class" AS "class",
+          "type" AS "type",
+          "v1_type" AS "v1_type",
           "z_order" AS "z_order",
           "unit_code" AS "unit_code"
-        FROM "nps_planet_osm_line_view"
+        FROM "nps_render_line_view"
         WHERE "osm_id" = v_id
       );
     END IF;
+
+-- Now that the render tables are updated, update the sync table
+    DELETE FROM "summary_sync" WHERE places_id = lower(v_member_type) || abs(v_id);
+    INSERT INTO "summary_sync" SELECT * FROM "summary_view" WHERE places_id = lower(v_member_type) || abs(v_id);
 
     RETURN true;
   END;
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
+ALTER FUNCTION public.o2p_render_element(bigint, character)
+  OWNER TO postgres;
 
 --------------------------------
 -- Render a full changeset
@@ -824,11 +838,16 @@ $BODY$
   
 --------------------------------
 -- Render a full changeset
+-- Function: public.pgs_update()
+
+-- DROP FUNCTION public.pgs_update();
+
 CREATE OR REPLACE FUNCTION public.pgs_update()
   RETURNS boolean[] AS
 $BODY$
   DECLARE
     v_return_value boolean[];
+    v_empty_records text[];
   BEGIN
     SELECT array_agg(not o2p_render_changeset(api_changesets.id) && ARRAY[false])
     FROM api_changesets
@@ -841,40 +860,65 @@ $BODY$
         SELECT rendered from nps_render_polygon
       ) all_types_rendered)
     INTO v_return_value;
-    
+
+    -- Clean out elements that no longer exist
+    SELECT
+      array_agg("places_id")
+    FROM
+      "summary_view"
+    WHERE
+      "changeset_id" IS NULL
+    INTO
+      v_empty_records;
+
+    DELETE FROM "nps_render_polygon" WHERE CASE WHEN "osm_id" < 0 THEN 'r' ELSE 'w' END || ABS("osm_id") = ANY(v_empty_records);
+    DELETE FROM "nps_render_line" WHERE CASE WHEN "osm_id" < 0 THEN 'r' ELSE 'w' END || ABS("osm_id") = ANY(v_empty_records);
+    DELETE FROM "nps_render_point" WHERE 'n' || "osm_id" = ANY(v_empty_records);
+    DELETE FROM "summary_sync" WHERE "places_id" = ANY(v_empty_records);
+
     RETURN v_return_value;
   END;
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
-  
-CREATE VIEW "summary" AS
+ALTER FUNCTION public.pgs_update()
+  OWNER TO postgres;
+
+-------------------
+-- summary view
+-------------------
+CREATE OR REPLACE VIEW "summary_view" AS
 SELECT
   "elements"."osm_id",
+  "elements"."places_id",
   "elements"."name",
   "elements"."superclass",
   "elements"."class",
-  "elements"."type",
+  lower("elements"."type") AS "type",
   "elements"."tags"::json AS "tags",
   "elements"."element_type" AS "element_type",
-  -- ST_AsGeoJson("elements"."the_geom") AS "geometry",
+  ST_Transform("elements"."the_geom", 4326) AS "the_geom",
   "elements"."tstamp",
   "elements"."changeset_id",
-  "elements"."changeset_tags",
+  "elements"."changeset_tags"::json AS "changeset_tags",
+  ("elements"."changeset_tags"::json -> 'created_by')::text AS "changeset_editor",
+  ("elements"."changeset_tags"::json -> 'comment')::text AS "changeset_comment",
+  ("elements"."changeset_tags"::json -> 'imagery_used')::text AS "changeset_imagery",
   "elements"."tags"->'nps:unit_code' AS "unit_code",
   "render_park_polys"."long_name" AS "unit_name",
   "elements"."user_id" as "user_id",
-  "users"."name" AS "username"
+  "users"."name" AS "user_name"
 FROM (
   SELECT
     "nps_render_point"."osm_id",
+    'n' || "nps_render_point"."osm_id" AS "places_id",
     "nps_render_point"."name",
     "nps_render_point"."superclass",
     "nps_render_point"."class",
     "nps_render_point"."type",
     "nps_render_point"."tags",
     "nps_render_point"."the_geom",
-    'node' AS "element_type",
+    'point' AS "element_type",
     "nodes"."tstamp" As "tstamp",
     "nodes"."changeset_id" as "changeset_id",
     (select hstore(array_agg(k), array_agg(v)) from json_populate_recordset(null::new_hstore,(SELECT json_agg("result") FROM (SELECT "k", "v" FROM "api_changeset_tags" WHERE "api_changeset_tags"."changeset_id" = "nodes"."changeset_id") "result")))::json AS "changeset_tags",
@@ -884,6 +928,7 @@ FROM (
   UNION ALL
   SELECT
     "nps_render_line"."osm_id",
+    CASE WHEN "nps_render_line"."osm_id" < 0 THEN 'r' || "nps_render_line"."osm_id" * -1 ELSE 'w' || "nps_render_line"."osm_id" END AS "places_id",
     "nps_render_line"."name",
     "nps_render_line"."superclass",
     "nps_render_line"."class",
@@ -916,13 +961,14 @@ FROM (
   UNION ALL
   SELECT
     "nps_render_polygon"."osm_id",
+    CASE WHEN "nps_render_polygon"."osm_id" < 0 THEN 'r' || "nps_render_polygon"."osm_id" * -1 ELSE 'w' || "nps_render_polygon"."osm_id" END AS "places_id",
     "nps_render_polygon"."name",
     "nps_render_polygon"."superclass",
     "nps_render_polygon"."class",
     "nps_render_polygon"."type",
     "nps_render_polygon"."tags",
     "nps_render_polygon"."the_geom",
-    'area' AS "element_type",
+    'polygon' AS "element_type",
     CASE WHEN
       "nps_render_polygon"."osm_id" < 0 THEN "relations"."tstamp"
     ELSE "ways"."tstamp"
@@ -948,6 +994,8 @@ FROM (
 ) AS "elements"
   LEFT JOIN "users" ON "elements"."user_id" = "users"."id"
   LEFT JOIN "render_park_polys" ON lower("elements"."tags" -> 'nps:unit_code') = lower("render_park_polys"."unit_code");
+  
+CREATE TABLE summary_sync AS SELECT * FROM summary_view;
 
 ---------------------------
 -- Foreign Data
