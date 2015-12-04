@@ -891,6 +891,7 @@ CREATE OR REPLACE VIEW "summary_view" AS
 SELECT
   "elements"."osm_id",
   "elements"."places_id",
+  "elements"."version",
   "elements"."name",
   "elements"."superclass",
   "elements"."class",
@@ -912,6 +913,7 @@ FROM (
   SELECT
     "nps_render_point"."osm_id",
     'n' || "nps_render_point"."osm_id" AS "places_id",
+    "nps_render_point"."version",
     "nps_render_point"."name",
     "nps_render_point"."superclass",
     "nps_render_point"."class",
@@ -929,6 +931,7 @@ FROM (
   SELECT
     "nps_render_line"."osm_id",
     CASE WHEN "nps_render_line"."osm_id" < 0 THEN 'r' || "nps_render_line"."osm_id" * -1 ELSE 'w' || "nps_render_line"."osm_id" END AS "places_id",
+    "nps_render_line"."version",
     "nps_render_line"."name",
     "nps_render_line"."superclass",
     "nps_render_line"."class",
@@ -962,6 +965,7 @@ FROM (
   SELECT
     "nps_render_polygon"."osm_id",
     CASE WHEN "nps_render_polygon"."osm_id" < 0 THEN 'r' || "nps_render_polygon"."osm_id" * -1 ELSE 'w' || "nps_render_polygon"."osm_id" END AS "places_id",
+    "nps_render_polygon"."version",
     "nps_render_polygon"."name",
     "nps_render_polygon"."superclass",
     "nps_render_polygon"."class",
