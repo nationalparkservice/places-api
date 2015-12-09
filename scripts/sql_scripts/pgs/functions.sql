@@ -80,6 +80,22 @@ CREATE OR REPLACE FUNCTION pgs_upsert_node(
           ST_SetSRID(ST_MakePoint(v_lon, v_lat),4326)
         );
     END IF;
+
+    -- The bool_and method is MUCH faster than a join
+
+    -- Update any ways that contain this node
+    PERFORM (
+      SELECT bool_and(pgs_upsert_way(id, changeset, visible, timestamp, nd, tag, version, uid)) FROM api_ways WHERE id = way_nodes.way_id
+    ) FROM
+      way_nodes
+    WHERE way_nodes.node_id = v_id;
+
+    -- Update any relations that contain this node
+    PERFORM (
+      SELECT bool_and(pgs_upsert_relation(id, changeset, visible, member, tag, timestamp, version, uid)) FROM api_relations WHERE id = relation_members.member_id
+    ) FROM
+      relation_members
+    WHERE member_type = 'N' AND relation_members.member_id = v_id;
     
     SELECT true into v_X; --TODO these should be more useful
 
@@ -150,6 +166,13 @@ CREATE OR REPLACE FUNCTION pgs_upsert_way(
            )
          );
       END IF;
+
+    -- Update any relations that contain this node
+    PERFORM (
+      SELECT bool_and(pgs_upsert_relation(id, changeset, visible, member, tag, timestamp, version, uid)) FROM api_relations WHERE id = relation_members.member_id
+    ) FROM
+      relation_members
+    WHERE member_type = 'W' AND relation_members.member_id = v_id;
       
     SELECT true into v_X; --TODO these should be more useful
 
