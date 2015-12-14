@@ -799,9 +799,10 @@ $BODY$
       );
     END IF;
 
+-- Sync disabled for now
 -- Now that the render tables are updated, update the sync table
-    DELETE FROM "summary_sync" WHERE places_id = lower(v_member_type) || abs(v_id);
-    INSERT INTO "summary_sync" SELECT * FROM "summary_view" WHERE places_id = lower(v_member_type) || abs(v_id);
+    -- DELETE FROM "summary_sync" WHERE places_id = lower(v_member_type) || abs(v_id);
+    -- INSERT INTO "summary_sync" SELECT * FROM "summary_view" WHERE places_id = lower(v_member_type) || abs(v_id);
 
     RETURN true;
   END;
