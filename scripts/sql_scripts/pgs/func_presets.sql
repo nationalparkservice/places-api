@@ -1,13 +1,11 @@
 CREATE OR REPLACE FUNCTION public.o2p_get_preset(
-  hstore,
-  text[],
-  boolean
-)
-  RETURNS text AS $o2p_get_name$
+    hstore,
+    text[])
+  RETURNS text AS
+$BODY$
 DECLARE
   v_hstore ALIAS for $1;
   v_geometry_type ALIAS FOR $2;
-  v_all ALIAS for $3;
   v_name TEXT;
   v_tag_count bigint;
 BEGIN
@@ -24,76 +22,74 @@ INTO
 
 IF v_tag_count > 0 THEN
   SELECT
-    "name"
+    "preset"::json
   FROM (
     SELECT
-      CASE 
-        WHEN "geometry" && v_geometry_type THEN "name"
+      CASE
+        WHEN "geometry" && v_geometry_type THEN "preset"
         ELSE null
-      END as "name",
+      END as "preset",
       "pathname",
       max("hstore_len") AS "hstore_len",
       count(*) AS "match_count",
-      max("matchscore") as "matchscore",
+      max("layerIndex") as "layerIndex",
       "all_tags",
-      bool_and("searchable") as "searchable"
+      bool_and("inCarto") as "inCarto"
     FROM (
       SELECT
-        "name",
+        "preset",
         "pathname",
         "available_tags",
         "all_tags",
-        "searchable",
-        "matchscore",
+        "inCarto",
+        "layerIndex",
         "geometry",
         each(v_hstore) AS "input_tags",
         "hstore_len"
       FROM (
         SELECT
-          "name",
+          "preset",
           "pathname",
           each("tags") AS "available_tags",
           "tags" as "all_tags",
-          "searchable",
-          "matchscore",
+          "inCarto",
+          "layerIndex",
           "geometry",
           "hstore_len"
         FROM (
           SELECT
-            "hstore_tag_list"."name",
+            "hstore_tag_list"."preset",
             "hstore_tag_list"."pathname",
-            "searchable",
-            "matchscore",
+            "inCarto",
+            "layerIndex",
             "geometry",
             (SELECT hstore(array_agg("key"), array_agg(hstore_tag_list.tags->"key")) from unnest(akeys(hstore_tag_list.tags)) "key" WHERE "key" NOT LIKE 'nps:%') "tags",
             (SELECT array_length(array_agg("key"),1) FROM unnest(akeys("hstore_tag_list"."tags")) "key" WHERE "key" NOT LIKE 'nps:%') "hstore_len"
           FROM
             (
               SELECT
-                "name",
-                "pathname",
+                (SELECT row_to_json("_") FROM (SELECT "superclass", "class", "name" as "type", "layerIndex") AS "_")::text as "preset",
+                "path" as "pathname",
                 json_to_hstore("tags") AS "tags",
-                COALESCE("searchable",false) as "searchable",
-                "matchscore",
+                COALESCE("inCarto",false) as "inCarto",
+                "layerIndex",
                 "geometry"
               FROM
-                "tag_list"
+                "nps_presets"
               WHERE
-                ((ARRAY['point'] && v_geometry_type AND "tag_list"."geometry" && ARRAY['point']) OR
-                (ARRAY['line','area'] && v_geometry_type AND "tag_list"."geometry" && ARRAY['line','area'])) AND
-                (v_all OR (
-                  "tag_list"."searchable" is true
-                ))
+                "inCarto" = true AND
+                ((ARRAY['point'] && v_geometry_type AND "nps_presets"."geometry" && ARRAY['point']) OR
+                (ARRAY['line','area'] && v_geometry_type AND "nps_presets"."geometry" && ARRAY['line','area']))
             ) "hstore_tag_list"
         ) "available_tags"
       ) "explode_tags"
     ) "paired_tags"
     WHERE
       "available_tags" = "input_tags"  OR
-      (hstore(available_tags)->'value' = '*' AND hstore(available_tags)->'key' = hstore(input_tags)->'key')
+      (hstore(available_tags)->'value' = '*' AND hstore(input_tags)->'value' != 'no' AND hstore(available_tags)->'key' = hstore(input_tags)->'key')
     GROUP BY
       "all_tags",
-      "name",
+      "preset",
       "pathname",
       "geometry"
     ) "counted_tags"
@@ -101,9 +97,9 @@ IF v_tag_count > 0 THEN
     "hstore_len" = "match_count"
   ORDER BY
     "match_count" DESC,
-    "searchable" DESC,
-    "matchscore" DESC,
-    avals("all_tags") && ARRAY['*']
+    avals("all_tags") && ARRAY['*'],
+    "inCarto" DESC,
+    "layerIndex" DESC
   LIMIT
     1
   INTO
@@ -114,5 +110,8 @@ IF v_tag_count > 0 THEN
 
  RETURN v_name;
 END;
-$o2p_get_name$
-LANGUAGE plpgsql;
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;
+ALTER FUNCTION public.o2p_get_preset(hstore, text[])
+  OWNER TO postgres;
