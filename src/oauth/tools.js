@@ -122,7 +122,7 @@ module.exports = function (config) {
       },
       splitAuthHeader: function (authorization) {
         // There may be a better way to do this
-        var auths = authorization.split(' '),
+        var auths = authorization.split(/[,\s]/g),
           authObj = {},
           authIndex;
         for (authIndex in auths) {
