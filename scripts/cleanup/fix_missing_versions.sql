@@ -1,5 +1,5 @@
-// This looks for rendered objects that have the wrong version
-// It then re-renders then with the right version
+-- This looks for rendered objects that have the wrong version
+-- It then re-renders then with the right version
 
 SELECT
   nps_render_point.osm_id,
