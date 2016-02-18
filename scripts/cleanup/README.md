@@ -1,7 +1,8 @@
 Places Cleanup Scripts
 ==========================
 These scripts fix issues with rendering, then need to be run periodically
-TODO: Add these to a cron task
+
+__TODO__: Add these to a cron task
 
 fix_missing_elements.sql
 ------------------------
