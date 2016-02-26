@@ -1,6 +1,6 @@
-// Run this every time tags get changed
-// This will go through the database and find anything that has been rendered with the wrong tags and will update them
-// ALERT: This query may take up to an hour to run!
+-- Run this every time tags get changed
+-- This will go through the database and find anything that has been rendered with the wrong tags and will update them
+-- ALERT: This query may take up to an hour to run!
 
 SELECT
   o2p_render_element(nps_render_point.osm_id, 'N')
