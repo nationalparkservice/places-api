@@ -696,7 +696,7 @@ $BODY$
           v_id AS "osm_id",
           MIN("nps_rendered"."version") AS "version",
           v_member_type AS "member_type",
-          --ST_UNION("nps_rendered"."the_geom") AS "way",
+          null AS "way",  --ST_UNION("nps_rendered"."the_geom") AS "way",
           MIN("nps_rendered"."rendered") AS "created",
           NOW()::timestamp without time zone AS "change_time"
         FROM (
@@ -737,7 +737,7 @@ $BODY$
         v_id AS "osm_id",
         MIN("nps_rendered"."version") AS "version",
         v_member_type AS "member_type",
-        --ST_UNION("nps_rendered"."the_geom") AS "way",
+        null AS "way",  --ST_UNION("nps_rendered"."the_geom") AS "way",
         MIN("nps_rendered"."rendered") AS "created",
         NOW()::timestamp without time zone AS "change_time"
       FROM (
