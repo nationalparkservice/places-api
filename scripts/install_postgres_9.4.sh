@@ -29,7 +29,7 @@ else
   sudo sh -c "echo \"deb $repo_name\" > $source_list"
 fi
 apt-get -y update
-apt-get -y install postgresql-9.4 postgresql-contrib-9.4 postgresql-9.4-postgis-2.1
+apt-get -y install postgresql-9.4 postgresql-contrib-9.4 postgresql-9.4-postgis-2.2
 sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD '$postgres_pw';"
 
 echo "╔══════════════════════════════════════════════╗"
