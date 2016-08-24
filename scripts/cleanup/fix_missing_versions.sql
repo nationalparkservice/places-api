@@ -29,7 +29,7 @@ WHERE
 UNION
 SELECT
   nps_render_polygon.osm_id,
-  (SELECT o2p_render_element(nps_render_polygon.osm_id, 'R')) AS rerendered
+  (SELECT o2p_render_element(nps_render_polygon.osm_id, 'W')) AS rerendered
 FROM
   nps_render_polygon JOIN relations ON relations.id = nps_render_polygon.osm_id * -1
 WHERE
@@ -38,7 +38,7 @@ WHERE
 UNION
 SELECT
   nps_render_line.osm_id,
-  (SELECT o2p_render_element(nps_render_line.osm_id, 'R')) AS rerendered
+  (SELECT o2p_render_element(nps_render_line.osm_id, 'W')) AS rerendered
 FROM
   nps_render_line JOIN relations ON relations.id = nps_render_line.osm_id * -1
 WHERE
