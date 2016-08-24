@@ -1050,7 +1050,7 @@ CREATE OR REPLACE VIEW public.nps_render_polygon_view AS
            FROM ( SELECT relation_members.relation_id * (-1) AS osm_id,
                     relations.version,
                     relations.tags,
-                    st_transform(st_union(o2p_aggregate_polygon_relation(relation_members.relation_id)), 900913) AS way
+                    st_transform(st_buffer(st_union(o2p_aggregate_polygon_relation(relation_members.relation_id)),0), 900913) AS way
                    FROM ways
                      JOIN relation_members ON ways.id = relation_members.member_id
                      JOIN relations ON relation_members.relation_id = relations.id
