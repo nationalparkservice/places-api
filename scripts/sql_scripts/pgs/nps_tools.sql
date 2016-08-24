@@ -997,6 +997,175 @@ FROM (
 CREATE TABLE summary_sync AS SELECT * FROM summary_view;
 
 ---------------------------
+-- Views 
+---------------------------
+
+-- View: public.nps_render_polygon_view
+
+-- DROP VIEW public.nps_render_polygon_view;
+
+CREATE OR REPLACE VIEW public.nps_render_polygon_view AS 
+ SELECT base.osm_id,
+    base.version,
+    base.name,
+    base.preset ->> 'superclass'::text AS superclass,
+    base.preset ->> 'class'::text AS class,
+    base.preset ->> 'type'::text AS type,
+    base.v1_type,
+    base.tags,
+    base.created,
+    base.way,
+    (base.preset ->> 'layerIndex'::text)::integer AS z_order,
+    COALESCE(base.unit_code, ( SELECT lower(render_park_polys.unit_code::text) AS lower
+           FROM render_park_polys
+          WHERE st_transform(base.way, 3857) && render_park_polys.poly_geom AND st_contains(render_park_polys.poly_geom, st_transform(base.way, 3857))
+          ORDER BY render_park_polys.minzoompoly, render_park_polys.area
+         LIMIT 1)) AS unit_code
+   FROM ( SELECT ways.id AS osm_id,
+            ways.version,
+            ways.tags -> 'name'::text AS name,
+            o2p_get_preset(ways.tags, ARRAY['area'::text])::json AS preset,
+            o2p_get_name(ways.tags, ARRAY['area'::text], false) AS v1_type,
+            ways.tags,
+            now()::timestamp without time zone AS created,
+            st_makepolygon(st_transform(o2p_calculate_nodes_to_line(ways.nodes), 900913)) AS way,
+            ways.tags -> 'nps:unit_code'::text AS unit_code
+           FROM ways
+          WHERE array_length(ways.nodes, 1) >= 4 AND NOT (EXISTS ( SELECT 1
+                   FROM relation_members
+                     JOIN relations ON relation_members.relation_id = relations.id
+                  WHERE relation_members.member_id = ways.id AND upper(relation_members.member_type::text) = 'W'::bpchar::text AND ((relations.tags -> 'type'::text) = 'multipolygon'::text OR (relations.tags -> 'type'::text) = 'boundary'::text OR (relations.tags -> 'type'::text) = 'route'::text))) AND (( SELECT array_length(array_agg(key.key), 1) AS array_length
+                   FROM unnest(akeys(ways.tags)) key(key)
+                  WHERE key.key !~~ 'nps:%'::text)) > 0 AND st_isclosed(o2p_calculate_nodes_to_line(ways.nodes))
+        UNION ALL
+         SELECT rel_poly.osm_id,
+            rel_poly.version,
+            rel_poly.tags -> 'name'::text AS name,
+            o2p_get_preset(rel_poly.tags, ARRAY['area'::text])::json AS preset,
+            o2p_get_name(rel_poly.tags, ARRAY['area'::text], false) AS v1_type,
+            rel_poly.tags,
+            now()::timestamp without time zone AS created,
+            rel_poly.way,
+            rel_poly.tags -> 'nps:unit_code'::text AS unit_code
+           FROM ( SELECT relation_members.relation_id * (-1) AS osm_id,
+                    relations.version,
+                    relations.tags,
+                    st_transform(st_union(o2p_aggregate_polygon_relation(relation_members.relation_id)), 900913) AS way
+                   FROM ways
+                     JOIN relation_members ON ways.id = relation_members.member_id
+                     JOIN relations ON relation_members.relation_id = relations.id
+                  WHERE (( SELECT array_length(array_agg(key.key), 1) AS array_length
+                           FROM unnest(akeys(relations.tags)) key(key)
+                          WHERE key.key !~~ 'nps:%'::text)) > 0 AND array_length(ways.nodes, 1) >= 4 AND st_isclosed(o2p_calculate_nodes_to_line(ways.nodes)) AND exist(relations.tags, 'type'::text) AND ((relations.tags -> 'type'::text) = 'multipolygon'::text OR (relations.tags -> 'type'::text) = 'boundary'::text OR (relations.tags -> 'type'::text) = 'route'::text)
+                  GROUP BY relation_members.relation_id, relations.version, relations.tags) rel_poly) base
+  WHERE (base.preset ->> 'type'::text) IS NOT NULL;
+
+ALTER TABLE public.nps_render_polygon_view
+  OWNER TO postgres;
+
+-- View: public.nps_render_point_view
+
+-- DROP VIEW public.nps_render_point_view;
+
+CREATE OR REPLACE VIEW public.nps_render_point_view AS 
+ SELECT base.osm_id,
+    base.version,
+    base.name,
+    base.preset ->> 'superclass'::text AS superclass,
+    base.preset ->> 'class'::text AS class,
+    base.preset ->> 'type'::text AS type,
+    base.v1_type,
+    base.tags,
+    base.created,
+    base.way,
+    (base.preset ->> 'layerIndex'::text)::integer AS z_order,
+    COALESCE(base.unit_code, ( SELECT lower(render_park_polys.unit_code::text) AS lower
+           FROM render_park_polys
+          WHERE st_transform(base.way, 3857) && render_park_polys.poly_geom AND st_contains(render_park_polys.poly_geom, st_transform(base.way, 3857))
+          ORDER BY render_park_polys.minzoompoly, render_park_polys.area
+         LIMIT 1)) AS unit_code
+   FROM ( SELECT nodes.id AS osm_id,
+            nodes.version,
+            nodes.tags -> 'name'::text AS name,
+            o2p_get_preset(nodes.tags, ARRAY['point'::text])::json AS preset,
+            o2p_get_name(nodes.tags, ARRAY['point'::text], false) AS v1_type,
+            nodes.tags,
+            now()::timestamp without time zone AS created,
+            st_transform(nodes.geom, 900913) AS way,
+            nodes.tags -> 'nps:unit_code'::text AS unit_code
+           FROM nodes
+          WHERE (( SELECT array_length(array_agg(key.key), 1) AS array_length
+                   FROM unnest(akeys(nodes.tags)) key(key)
+                  WHERE key.key !~~ 'nps:%'::text)) > 0) base
+  WHERE (base.preset ->> 'type'::text) IS NOT NULL;
+
+ALTER TABLE public.nps_render_point_view
+  OWNER TO postgres;
+
+-- View: public.nps_render_line_view
+
+-- DROP VIEW public.nps_render_line_view;
+
+CREATE OR REPLACE VIEW public.nps_render_line_view AS 
+ SELECT base.osm_id,
+    base.version,
+    base.name,
+    base.tags,
+    base.created,
+    base.way,
+    base.preset ->> 'superclass'::text AS superclass,
+    base.preset ->> 'class'::text AS class,
+    base.preset ->> 'type'::text AS type,
+    base.v1_type,
+    (base.preset ->> 'layerIndex'::text)::integer AS z_order,
+    lower(COALESCE(base.unit_code, ( SELECT lower(render_park_polys.unit_code::text) AS lower
+           FROM render_park_polys
+          WHERE st_transform(base.way, 3857) && render_park_polys.poly_geom AND st_contains(render_park_polys.poly_geom, st_transform(base.way, 3857))
+          ORDER BY render_park_polys.minzoompoly, render_park_polys.area
+         LIMIT 1))) AS unit_code
+   FROM ( SELECT ways.id AS osm_id,
+            ways.version,
+            ways.tags -> 'name'::text AS name,
+            o2p_get_preset(ways.tags, ARRAY['line'::text])::json AS preset,
+            o2p_get_name(ways.tags, ARRAY['line'::text], false) AS v1_type,
+            ways.tags,
+            now()::timestamp without time zone AS created,
+            st_transform(o2p_calculate_nodes_to_line(ways.nodes), 900913) AS way,
+            ways.tags -> 'nps:unit_code'::text AS unit_code
+           FROM ways
+          WHERE NOT (EXISTS ( SELECT 1
+                   FROM relation_members
+                     JOIN relations ON relation_members.relation_id = relations.id
+                  WHERE relation_members.member_id = ways.id AND upper(relation_members.member_type::text) = 'W'::bpchar::text AND (relations.tags -> 'type'::text) = 'route'::text)) AND (( SELECT array_length(array_agg(key.key), 1) AS array_length
+                   FROM unnest(akeys(ways.tags)) key(key)
+                  WHERE key.key !~~ 'nps:%'::text)) > 0
+        UNION ALL
+         SELECT rel_line.osm_id,
+            rel_line.version,
+            rel_line.tags -> 'name'::text AS name,
+            o2p_get_preset(rel_line.tags, ARRAY['line'::text])::json AS preset,
+            o2p_get_name(rel_line.tags, ARRAY['line'::text], false) AS v1_type,
+            rel_line.tags,
+            now()::timestamp without time zone AS created,
+            rel_line.way,
+            rel_line.tags -> 'nps:unit_code'::text AS unit_code
+           FROM ( SELECT relation_members.relation_id * (-1) AS osm_id,
+                    relations.version,
+                    relations.tags,
+                    st_transform(st_union(o2p_aggregate_line_relation(relation_members.relation_id)), 900913) AS way
+                   FROM ways
+                     JOIN relation_members ON ways.id = relation_members.member_id
+                     JOIN relations ON relation_members.relation_id = relations.id
+                  WHERE (( SELECT array_length(array_agg(key.key), 1) AS array_length
+                           FROM unnest(akeys(relations.tags)) key(key)
+                          WHERE key.key !~~ 'nps:%'::text)) > 0 AND exist(relations.tags, 'type'::text)
+                  GROUP BY relation_members.relation_id, relations.version, relations.tags) rel_line) base
+  WHERE base.preset IS NOT NULL;
+
+ALTER TABLE public.nps_render_line_view
+  OWNER TO postgres;
+
+---------------------------
 -- Foreign Data
 ---------------------------
 CREATE EXTENSION postgres_fdw;
